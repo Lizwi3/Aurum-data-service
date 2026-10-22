@@ -1,0 +1,1122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="aurum-api" content="/api/agsi-latest">
+<title>AURUM Intelligence</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+/* Layout: terminal shell — fixed rail of sections on the left, one working panel at a time; rail becomes a scrolling tab strip on phones. Deliberately dark-only (navy + bullion gold). */
+:root{
+  --ink:#0a1120; --rail:#0d1628; --panel:#111c31; --well:#0c1527; --line:#20304d;
+  --text:#edf0f5; --muted:#8f9cb4; --dim:#5d6a85;
+  --gold:#d6b04a; --gold-hi:#f0d585; --gold-wash:rgba(214,176,74,.10);
+  --calm:#2fb67c; --watch:#e3c13a; --rising:#ee8a2e; --stress:#e5484d; --sample:#a98be8; --legacy:#7fb2ff;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-head:"IBM Plex Sans Condensed","IBM Plex Sans",system-ui,sans-serif;
+  --f-num:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  --r:10px;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{background:var(--ink);color:var(--text)}
+body{font:14px/1.55 var(--f-body);min-height:100%}
+a{color:var(--gold-hi)}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--gold-hi);outline-offset:2px}
+.shell{display:grid;grid-template-columns:228px minmax(0,1fr);min-height:100vh}
+.rail{background:var(--rail);border-right:1px solid var(--line);padding-block:20px;padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:14px;position:sticky;top:env(safe-area-inset-top,0px);height:100vh;overflow:auto}
+.brand{display:flex;gap:10px;align-items:center;padding:0 6px 18px;margin-bottom:12px;border-bottom:1px solid var(--line)}
+.mark{width:32px;height:32px;border-radius:7px;flex:none;background:linear-gradient(140deg,var(--gold-hi),var(--gold) 55%,#8c6c17);display:grid;place-items:center;color:var(--ink);font:600 13px var(--f-num)}
+.brand b{display:block;font:600 14px var(--f-head);letter-spacing:.2em}
+.brand small{display:block;color:var(--muted);font-size:11px}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav button{display:block;width:100%;text-align:left;background:none;border:0;cursor:pointer;padding:8px 10px;border-radius:7px;color:var(--muted);font-size:13.5px;font-family:inherit}
+.nav button:hover{color:var(--text);background:var(--panel)}
+.nav button[aria-current="page"]{color:var(--gold-hi);background:var(--gold-wash);box-shadow:inset 2px 0 0 var(--gold)}
+.rail-foot{margin-top:18px;padding:12px 8px 0;border-top:1px solid var(--line);font-size:11px;color:var(--dim)}
+main{padding-block:26px 64px;padding-left:32px;padding-right:max(32px,env(safe-area-inset-right,0px));min-width:0}
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+h1{font:600 24px/1.2 var(--f-head);margin:0;letter-spacing:.01em;text-wrap:balance}
+h2{font:600 15px/1.3 var(--f-head);margin:0 0 12px;letter-spacing:.02em}
+.lede{color:var(--muted);margin:4px 0 0;max-width:68ch}
+.grid{display:grid;gap:14px}
+.c4{grid-template-columns:repeat(4,minmax(0,1fr))}.c3{grid-template-columns:repeat(3,minmax(0,1fr))}.c2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.wide{grid-column:1/-1}.span2{grid-column:span 2}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:18px;min-width:0}
+.well{background:var(--well);border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+.eyebrow{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+.score{font:600 52px/1 var(--f-num);font-variant-numeric:tabular-nums}
+.big{font:600 20px/1.25 var(--f-head)}
+.muted{color:var(--muted)}.dim{color:var(--dim)}.sm{font-size:12.5px}
+.t-calm{color:var(--calm)}.t-watch{color:var(--watch)}.t-rising{color:var(--rising)}.t-stress{color:var(--stress)}
+.pill{display:inline-flex;align-items:center;gap:7px;padding:3px 11px;border-radius:99px;font-size:12.5px;font-weight:500;background:var(--well);border:1px solid var(--line)}
+.pill::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}
+.tag{display:inline-block;font:500 10.5px/1.5 var(--f-body);letter-spacing:.07em;text-transform:uppercase;padding:1px 7px;border-radius:4px;border:1px solid var(--line);color:var(--muted)}
+.tag.sample{color:var(--sample);border-color:color-mix(in srgb,var(--sample) 45%,transparent)}
+.tag.legacy{color:var(--legacy);border-color:color-mix(in srgb,var(--legacy) 45%,transparent)}
+.tag.exp{color:var(--rising);border-color:color-mix(in srgb,var(--rising) 45%,transparent)}
+.meter{position:relative;height:8px;border-radius:99px;margin:16px 0 6px;background:linear-gradient(90deg,var(--calm) 0 30%,var(--watch) 30% 60%,var(--rising) 60% 80%,var(--stress) 80%)}
+.meter i{position:absolute;top:-5px;width:4px;height:18px;margin-left:-2px;background:var(--text);border-radius:2px;box-shadow:0 0 0 2px var(--panel)}
+.ticks{position:relative;height:14px;font:10px var(--f-num);color:var(--dim)}
+.ticks span{position:absolute;transform:translateX(-50%)}
+.note{font-size:12.5px;color:var(--muted);border-left:2px solid var(--gold);padding:1px 0 1px 10px;margin:12px 0 0;max-width:75ch}
+.empty{border:1px dashed var(--line);border-radius:var(--r);padding:26px;text-align:center;color:var(--muted)}
+.empty b{display:block;color:var(--text);font-size:15px;margin-bottom:4px}
+.banner{padding:11px 14px;border-radius:8px;margin-bottom:16px;font-size:13px;border:1px solid var(--line);background:var(--well)}
+.banner.warn{border-color:color-mix(in srgb,var(--stress) 50%,transparent);background:color-mix(in srgb,var(--stress) 9%,var(--ink))}
+.banner.sample{border-color:color-mix(in srgb,var(--sample) 50%,transparent);background:color-mix(in srgb,var(--sample) 9%,var(--ink))}
+.banner.ok{border-color:color-mix(in srgb,var(--calm) 50%,transparent);background:color-mix(in srgb,var(--calm) 9%,var(--ink))}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-weight:500;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:9px 10px;border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent);vertical-align:top}
+.r{text-align:right}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;margin:0;font-size:13px}.kv dt{color:var(--muted)}.kv dd{margin:0}
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+label.f{display:block}
+label.f>span{display:block;font-weight:500;margin-bottom:5px}
+label.f small{display:block;color:var(--dim);margin-top:4px;font-size:11.5px}
+input,select{width:100%;background:var(--well);border:1px solid var(--line);border-radius:7px;padding:9px 11px}
+input:focus{border-color:var(--gold);outline:none}
+input.bad{border-color:var(--stress)}
+.err{color:var(--stress);font-size:12px;margin-top:4px}
+.btn{text-decoration:none;display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:7px;border:0;background:var(--gold);color:var(--ink);font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap}
+.btn:hover{background:var(--gold-hi)}
+.btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn.ghost:hover{border-color:var(--gold)}
+.btn.danger{background:transparent;color:var(--stress);border:1px solid color-mix(in srgb,var(--stress) 45%,transparent)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.mt{margin-top:14px}.mt2{margin-top:20px}
+.bar{height:6px;background:var(--well);border-radius:4px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--gold)}
+.chart{position:relative;height:260px}.chart.tall{height:320px}
+ul.list{margin:0;padding-left:18px}ul.list li{margin:5px 0}
+.ai{white-space:pre-wrap;line-height:1.65;max-width:75ch}
+.confirm{display:inline-flex;gap:6px;align-items:center}
+/* tooltips */
+label.f{position:relative}
+.tip{display:inline}
+.tip-btn{display:inline-grid;place-items:center;width:18px;height:18px;margin-left:6px;padding:0;border-radius:50%;border:1px solid var(--line);background:var(--well);color:var(--gold-hi);font:600 11px/1 var(--f-num);cursor:pointer;vertical-align:1px}
+.tip-btn:hover,.tip-btn[aria-expanded="true"]{border-color:var(--gold)}
+.tip-pop{display:none;position:absolute;z-index:30;left:0;right:0;top:24px;background:var(--rail);border:1px solid var(--gold);border-radius:8px;padding:10px 12px;font-size:12.5px;font-weight:400;line-height:1.5;color:var(--text);box-shadow:0 10px 30px rgba(0,0,0,.45);pointer-events:none}
+.tip-pop b{color:var(--gold-hi);font-weight:600}
+.tip:hover .tip-pop,.tip-btn:focus-visible+.tip-pop,.tip.open .tip-pop{display:block}
+/* footer disclaimer */
+.disclaimer{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);font-size:12px;line-height:1.6;color:var(--dim);max-width:95ch}
+.disclaimer b{color:var(--muted)}
+.linkbtn{background:none;border:0;padding:0;color:var(--gold-hi);text-decoration:underline;cursor:pointer;font:inherit}
+/* methodology dialog */
+dialog.modal{width:min(720px,calc(100vw - 32px));max-height:calc(100vh - 48px);padding:0;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--text);box-shadow:0 24px 60px rgba(0,0,0,.6)}
+dialog.modal::backdrop{background:rgba(4,8,16,.72)}
+.modal-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel)}
+.modal-body{padding:18px 20px 22px;overflow:auto}
+.modal-body h3{font:600 13px var(--f-head);letter-spacing:.06em;text-transform:uppercase;color:var(--gold-hi);margin:18px 0 8px}
+.modal-body h3:first-child{margin-top:0}
+.modal-body p{margin:0 0 8px;max-width:70ch}
+/* data feed loader */
+details.feed{margin-top:16px;border:1px solid var(--line);border-radius:8px;background:var(--well)}
+details.feed>summary{cursor:pointer;padding:10px 14px;font-weight:500;list-style:none}
+details.feed>summary::-webkit-details-marker{display:none}
+details.feed>summary::before{content:"+";display:inline-block;width:16px;color:var(--gold-hi);font-family:var(--f-num)}
+details.feed[open]>summary::before{content:"–"}
+.feed-body{padding:0 14px 14px;display:grid;gap:12px}
+textarea{width:100%;min-height:96px;background:var(--ink);border:1px solid var(--line);border-radius:7px;padding:9px 11px;font:12.5px/1.5 var(--f-num);color:var(--text);resize:vertical}
+textarea:focus{border-color:var(--gold);outline:none}
+.src-chip{display:inline-block;margin-left:6px;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--calm)}
+.src-chip.sample{color:var(--sample)}
+.autofill{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;padding:12px 14px;margin:0 0 18px;border:1px solid color-mix(in srgb,var(--gold) 40%,var(--line));border-radius:8px;background:var(--gold-wash)}
+.autofill .row{gap:8px;flex:none}
+.af-status{flex:1 1 260px;min-width:0;font-size:12.5px;color:var(--muted);line-height:1.5}
+.af-status b{color:var(--text);font-weight:500}
+.result-live{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+@media (max-width:1100px){.c4{grid-template-columns:repeat(2,minmax(0,1fr))}.c3{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:820px){
+  .shell{grid-template-columns:minmax(0,1fr);grid-template-rows:auto 1fr}
+  .rail{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;height:auto;padding-block:10px 0;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));border-right:0;border-bottom:1px solid var(--line)}
+  .brand{border:0;margin:0;padding:0 0 8px}
+  .nav{flex-direction:row;overflow-x:auto;gap:4px;padding-bottom:8px;scrollbar-width:none}
+  .nav button{white-space:nowrap;flex:none;width:auto}
+  .rail-foot{display:none}
+  main{padding-block:18px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .c4,.c3,.c2{grid-template-columns:minmax(0,1fr)}.span2{grid-column:auto}
+  .score{font-size:44px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+
+<div class="shell">
+  <aside class="rail">
+    <div class="brand"><div class="mark">Au</div><div><b>AURUM</b><small>Gold market intelligence</small></div></div>
+    <nav class="nav" id="nav"></nav>
+    <div class="rail-foot">Model <span class="num" data-model></span><br><button type="button" class="linkbtn" data-open-method>How AGSI works</button><br>Research tool. Not investment advice.</div>
+  </aside>
+  <main id="main">
+    <div id="fatal" role="alert"></div>
+    <div id="status"></div>
+
+    <!-- OVERVIEW -->
+    <section id="s-overview" data-title="Overview">
+      <div class="head"><div><h1>Overview</h1><p class="lede">Your latest AURUM Gold Systemic Stress Index (AGSI) reading and how it has moved.</p></div>
+        <button type="button" class="btn" data-go="engine">Record a reading</button></div>
+      <div id="ov"></div>
+    </section>
+
+    <!-- ENGINE -->
+    <section id="s-engine" data-title="AGSI Engine" hidden>
+      <div class="head"><div><h1>AGSI Engine</h1><p class="lede">Auto-fill the five figures or type your own. The score updates as you type, and nothing is saved until you press Save. Tap <b class="num" style="color:var(--gold-hi)">i</b> next to a figure to see what it means.</p></div>
+        <button type="button" class="btn ghost" data-open-method>How AGSI works</button></div>
+      <div class="grid c3">
+        <form class="card span2" id="calcForm" novalidate>
+          <h2>Inputs</h2>
+          <div class="autofill">
+            <div class="row">
+              <button type="button" class="btn" id="btnAutofill">Auto-fill latest data</button>
+              <button type="button" class="btn ghost" id="btnClear">Clear</button>
+            </div>
+            <div class="af-status" id="afStatus" role="status" aria-live="polite"></div>
+          </div>
+          <div class="form" id="inputs"></div>
+          <details class="feed" id="feedBox">
+            <summary>Fill from a data feed <span class="sm muted">(JSON)</span></summary>
+            <div class="feed-body">
+              <p class="sm muted" style="margin:0">Load all five figures at once from a JSON file, pasted text or a web address. The numbers go into the boxes above for you to check; nothing is saved automatically.</p>
+              <label class="f" for="feedUrl"><span class="sm">Web address (REST endpoint returning JSON)</span>
+                <div class="row"><input id="feedUrl" type="url" inputmode="url" placeholder="https://your-server.example/agsi/latest" style="flex:1;min-width:200px"><button type="button" class="btn ghost" id="btnFeedUrl">Fetch</button></div></label>
+              <label class="f" for="feedFile"><span class="sm">Or a .json file</span><input id="feedFile" type="file" accept=".json,application/json"></label>
+              <label class="f" for="feedText"><span class="sm">Or paste JSON</span>
+                <textarea id="feedText" spellcheck="false" placeholder='{"registered_inventory": 14.2, "open_interest": 512, "etf_flow": -8.5, "delivery_ratio": 9.1, "macro_stress": 45, "as_of": "2026-10-15"}'></textarea></label>
+              <div class="row"><button type="button" class="btn ghost" id="btnFeedText">Fill from pasted JSON</button><span class="sm" id="feedMsg" role="status"></span></div>
+            </div>
+          </details>
+          <label class="f mt"><span>Note (optional)</span><input id="note" maxlength="300" placeholder="e.g. COMEX report for week ending 10 Oct"></label>
+          <div class="row mt">
+            <button class="btn ghost" type="submit" id="btnCalc">Check figures</button>
+            <button class="btn" type="button" id="btnSave">Calculate and save</button>
+            <span class="sm muted" id="saveMsg" role="status"></span>
+          </div>
+        </form>
+        <div class="card" id="result"></div>
+      </div>
+      <div class="card mt" id="breakdown" hidden></div>
+      <div class="card mt"><h2>What each figure does</h2><div class="tw"><table id="effects"></table></div>
+        <p class="note">The ranges and weights are starting assumptions from the prototype and have not been tested against real outcomes. See Methodology.</p></div>
+    </section>
+
+    <!-- MARKET -->
+    <section id="s-market" data-title="Gold Market" hidden>
+      <div class="head"><div><h1>Gold Market</h1><p class="lede">XAU/USD price information.</p></div></div>
+      <div class="grid c2">
+        <div class="card"><div class="eyebrow">Live price feed</div>
+          <div class="empty"><b>Live market data not connected</b>A live gold price needs a paid or free data-provider key (for example Twelve Data). Keys can't be stored safely in a shared web page, so this version doesn't fetch prices. The full app in the zip file supports it.</div></div>
+        <div class="card"><div class="eyebrow">Reference price <span class="tag">manually entered</span></div>
+          <div id="manual"></div>
+          <form class="row mt" id="manualForm" novalidate><label class="f" style="flex:1;min-width:150px"><span class="sm">XAU/USD</span><input id="manualPrice" inputmode="decimal" placeholder="e.g. 2,410.50"></label><button class="btn ghost" style="align-self:flex-end">Save price</button></form>
+          <div class="err" id="manualErr"></div>
+          <p class="note">Shown only as a number you typed in, with the time you saved it. It is never treated as a live price.</p></div>
+        <div class="card wide"><h2>Where to check the gold price</h2>
+          <ul class="list sm">
+            <li><a href="https://www.lbma.org.uk/prices-and-data/precious-metal-prices" target="_blank" rel="noopener">LBMA precious metal prices</a> (the London benchmark)</li>
+            <li><a href="https://www.cmegroup.com/markets/metals/precious/gold.html" target="_blank" rel="noopener">CME Group gold futures</a> (also publishes COMEX inventory and open interest)</li>
+            <li><a href="https://www.gold.org/goldhub/data/gold-prices" target="_blank" rel="noopener">World Gold Council: Goldhub prices</a></li>
+          </ul></div>
+      </div>
+    </section>
+
+    <!-- STRESS -->
+    <section id="s-stress" data-title="Stress Monitor" hidden>
+      <div class="head"><div><h1>Stress Monitor</h1><p class="lede">Large jumps and streaks between your saved readings, in date order.</p></div>
+        <div class="row"><label class="f"><span class="sm">Jump size (points)</span><input id="th" inputmode="decimal" style="width:120px"></label>
+          <label class="f"><span class="sm">Streak length</span><input id="runLen" inputmode="numeric" style="width:100px"></label></div></div>
+      <div id="st"></div>
+    </section>
+
+    <!-- REGIMES -->
+    <section id="s-regimes" data-title="Market Regimes" hidden>
+      <div class="head"><div><h1>Market Regimes</h1><p class="lede">Which of the four regimes each saved reading fell into, and when it changed.</p></div></div>
+      <div id="rg"></div>
+    </section>
+
+    <!-- HISTORY -->
+    <section id="s-history" data-title="Historical Analytics" hidden>
+      <div class="head"><div><h1>Historical Analytics</h1><p class="lede">Every saved reading. Nothing is filled in or estimated.</p></div>
+        <div class="row">
+          <label class="f"><span class="sm">From</span><input type="date" id="hFrom"></label>
+          <label class="f"><span class="sm">To</span><input type="date" id="hTo"></label>
+          <label class="f"><span class="sm">Sample data</span><select id="hSample"><option value="1">Include</option><option value="0">Exclude</option></select></label>
+          <button class="btn" id="btnExport" style="align-self:flex-end">Download CSV</button>
+        </div></div>
+      <div class="sm muted" id="exportMsg" role="status"></div>
+      <div id="hi"></div>
+    </section>
+
+    <!-- NEWS -->
+    <section id="s-news" data-title="Macro News" hidden>
+      <div class="head"><div><h1>Macro News</h1><p class="lede">Economic news that tends to move gold, from the original sources.</p></div></div>
+      <div class="banner">AURUM doesn't pull headlines into this page, so it can never show you an invented headline or number. Use the official sources below; the full app can fetch them automatically once given data keys.</div>
+      <div class="grid c2" id="newsGrid"></div>
+    </section>
+
+    <!-- RESEARCH -->
+    <section id="s-research" data-title="Research" hidden>
+      <div class="head"><div><h1>Research</h1><p class="lede">A brief built only from your saved readings. Every line can be traced to a number on this page.</p></div></div>
+      <div id="rs"></div>
+    </section>
+
+    <!-- METHODOLOGY -->
+    <section id="s-method" data-title="Methodology" hidden>
+      <div class="head"><div><h1>Methodology</h1><p class="lede">How the score is built and what it can and can't tell you.</p></div></div>
+      <div id="me"></div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section id="s-settings" data-title="Settings" hidden>
+      <div class="head"><div><h1>Settings</h1><p class="lede">Your data and how AURUM is set up.</p></div></div>
+      <div class="grid c2">
+        <div class="card"><h2>Saved readings</h2><dl class="kv" id="counts"></dl>
+          <div class="row mt" id="sampleBtns"></div><div class="sm muted mt" id="sampleMsg" role="status"></div>
+          <p class="note">Sample readings are made-up practice data. They are marked "sample" everywhere and drawn as a dashed purple line.</p></div>
+        <div class="card"><h2>Import your old log</h2>
+          <p class="sm muted" style="margin-top:0">Have an <span class="num">agsi_log.csv</span> from the prototype? Pick it here. AURUM needs a date column and an AGSI or score column. Rows already imported are skipped.</p>
+          <input type="file" id="csvFile" accept=".csv,text/csv">
+          <div class="sm muted mt" id="importMsg" role="status"></div></div>
+        <div class="card wide"><h2>Model settings</h2><dl class="kv" id="cfgList"></dl>
+          <p class="note">Jump size and streak length can be changed on the Stress Monitor page; they're remembered in this browser only. Weights and ranges are fixed in this version so every saved reading stays comparable.</p></div>
+      </div>
+    </section>
+
+    <footer class="disclaimer" role="contentinfo">
+      <p style="margin:0 0 6px"><b>Disclaimer:</b> AURUM and the AURUM Gold Stress Index (AGSI) are designed strictly for educational, analytical, and market research purposes. AURUM does not provide financial, investment, legal, or trading advice. Model readings are generated using statistical market inputs and should not be relied upon for execution or investment decisions.</p>
+      <p style="margin:0">Model <span class="num" data-model></span> · <button type="button" class="linkbtn" data-open-method>Methodology</button></p>
+    </footer>
+  </main>
+</div>
+
+<dialog class="modal" id="methodDlg" aria-labelledby="methodTitle">
+  <div class="modal-head"><h2 id="methodTitle" style="margin:0">How AGSI works · <span class="num" data-model></span></h2>
+    <button type="button" class="btn ghost" id="methodClose" aria-label="Close methodology">Close</button></div>
+  <div class="modal-body" id="methodBody"></div>
+</dialog>
+
+<script>
+"use strict";
+function showFatal(msg){
+  try { const el = document.getElementById("fatal"); if (!el) return;
+    const d = document.createElement("div"); d.className = "banner warn";
+    d.textContent = "Something on this page stopped working: " + String(msg).slice(0,200) + ". Please copy this message to Claude.";
+    el.prepend(d); } catch {}
+}
+window.addEventListener("error", e => showFatal(e.message || "script error"));
+window.addEventListener("unhandledrejection", e => { const r = e.reason; if (r && r.name === "AbortError") return; showFatal((r && (r.message || r.code)) || "unknown error"); });
+/* ================= Methodology (single source of truth) ================= */
+const MODEL = "agsi-1.1.0";
+const WEIGHTS = {physical:.25, paper:.25, etf:.20, delivery:.20, macro:.10};
+const INPUTS = [
+  {key:"registered_inventory", label:"Registered gold inventory", unit:"million troy oz (COMEX registered)", comp:"physical", min:0, max:100, lo:5, hi:25, up:false,
+   effect:"Less metal sitting ready for delivery means more stress, so the score rises as inventory falls."},
+  {key:"open_interest", label:"Open interest", unit:"thousand contracts (COMEX gold futures)", comp:"paper", min:0, max:5000, lo:300, hi:700, up:true,
+   effect:"More paper contracts outstanding compared with real metal means more leverage, so stress rises."},
+  {key:"etf_flow", label:"Gold ETF flow", unit:"tonnes; positive = money flowing in, negative = flowing out", comp:"etf", min:-500, max:500, lo:-50, hi:50, up:false,
+   effect:"Outflows (investors selling or being forced to sell) add stress; inflows reduce it. Negative numbers are fine."},
+  {key:"delivery_ratio", label:"Delivery ratio", unit:"% of contracts asking for physical delivery", comp:"delivery", min:0, max:100, lo:2, hi:20, up:true,
+   effect:"When more buyers want actual metal instead of paper, stress rises."},
+  {key:"macro_stress", label:"Macroeconomic stress", unit:"0 (calm) to 100 (crisis); your rating, or worked out from FRED by auto-fill", comp:"macro", min:0, max:100, lo:0, hi:100, up:true,
+   effect:"Your judgement of the wider economy. Because it's a personal call, it carries the smallest weight."},
+];
+const TIPS = {
+  registered_inventory: "Lower vault bullion levels increase the stress score, because less metal available means physical supply is tighter.",
+  open_interest: "Elevated paper-market contract volume increases vulnerability to leverage shocks and margin squeezes.",
+  etf_flow: "Net outflows reflect institutional capital withdrawal and liquidity pressure, which drives stress higher (agsi-1.1.0 direction rule). Inflows lower it.",
+  delivery_ratio: "Higher physical delivery requests relative to open interest signal elevated strain on physical settlement.",
+  macro_stress: "Broader macroeconomic volatility, real interest-rate shifts and currency instability increase baseline systemic risk. This is your own 0–100 rating.",
+};
+const BANDS = [
+  {min:0,  heat:"Calm",          cls:"calm",   regime:"Calm accumulation phase", status:"Normal",   signal:"No stress signal",      bias:"Neutral"},
+  {min:30, heat:"Watch",         cls:"watch",  regime:"Transition phase",        status:"Elevated", signal:"Monitor",               bias:"Caution / Wait"},
+  {min:60, heat:"Rising Risk",   cls:"rising", regime:"Liquidity stress phase",  status:"High",     signal:"Stress building",       bias:"Bullish metals"},
+  {min:80, heat:"System Stress", cls:"stress", regime:"Crisis regime",           status:"Critical", signal:"Systemic stress alert", bias:"Crisis / Defensive"},
+];
+const ANOMALY_Z = 2.5, ANOMALY_MIN = 20;
+
+/* ================= Engine ================= */
+// Shared rounding rule, identical to the full app (engine.round_half_up): floor(x*10^p + 0.5) / 10^p
+function roundHalfUp(x, p){ const f = 10 ** p; return Math.floor(x * f + 0.5) / f; }
+function validate(raw){
+  const errors = {}, clean = {};
+  for (const s of INPUTS){
+    const v = raw[s.key];
+    if (v === undefined || v === null || String(v).trim() === ""){ errors[s.key] = "Please fill this in."; continue; }
+    const n = Number(String(v).replace(/[,\s]/g,""));
+    if (!Number.isFinite(n)){ errors[s.key] = "This needs to be a number."; continue; }
+    if (n < s.min || n > s.max){ errors[s.key] = `Must be between ${s.min} and ${s.max}.`; continue; }
+    clean[s.key] = n;
+  }
+  return {errors, clean};
+}
+function normalize(v, lo, hi, up){
+  if (hi === lo) return 50;
+  let f = Math.min(1, Math.max(0, (v - lo) / (hi - lo)));
+  if (!up) f = 1 - f;
+  return roundHalfUp(f * 100, 4);
+}
+function classify(score){
+  const s = Number(score);
+  if (!Number.isFinite(s)) throw new Error("classify: score is not a number");
+  if (s < 30) return BANDS[0];
+  if (s < 60) return BANDS[1];
+  if (s < 80) return BANDS[2];
+  return BANDS[3];
+}
+function agreement(comp){
+  const v = Object.values(comp); const m = v.reduce((a,b)=>a+b,0)/v.length;
+  const sd = Math.sqrt(v.reduce((a,b)=>a+(b-m)**2,0)/v.length);
+  return roundHalfUp(Math.max(0, 100 - 2*sd), 1);
+}
+function calculate(raw){
+  const {errors, clean} = validate(raw);
+  if (Object.keys(errors).length) return {errors};
+  const comp = {}, contrib = {}, warnings = [];
+  for (const s of INPUTS){
+    comp[s.comp] = normalize(clean[s.key], s.lo, s.hi, s.up);
+    contrib[s.comp] = roundHalfUp(comp[s.comp] * WEIGHTS[s.comp], 4);
+    if (clean[s.key] < s.lo || clean[s.key] > s.hi) warnings.push(`${s.label} (${clean[s.key]}) is outside the usual range ${s.lo} to ${s.hi}, so its part of the score is capped.`);
+  }
+  let total = 0; for (const k of Object.keys(WEIGHTS)) total += contrib[k];   // fixed order, same as the full app
+  const score = roundHalfUp(Math.min(100, Math.max(0, total)), 2);
+  const b = classify(score);
+  return {score, comp, contrib, inputs:clean, warnings, agreement:agreement(comp), heat:b.heat, cls:b.cls, regime:b.regime, status:b.status, signal:b.signal, bias:b.bias, model:MODEL};
+}
+
+/* ================= Stress analysis ================= */
+function cleanRows(rows){
+  const seen = new Set(), out = []; let dropped = 0;
+  for (const r of rows){
+    const t = Date.parse(r.ts), s = Number(r.score);
+    if (!Number.isFinite(t) || !Number.isFinite(s) || s < 0 || s > 100 || seen.has(r.ts)){ dropped++; continue; }
+    seen.add(r.ts); out.push(r);
+  }
+  out.sort((a,b)=>Date.parse(a.ts)-Date.parse(b.ts));
+  return {rows:out, dropped};
+}
+function analyse(rows, th, runLen){
+  const {rows:h, dropped} = cleanRows(rows);
+  const res = {n:h.length, dropped, spikes:[], latest:null, trend:"flat", run:0, accel:null, msgs:[], changes:[]};
+  if (h.length < 2){ res.msgs.push(`Not enough history yet: ${h.length} reading${h.length===1?"":"s"} saved. Two or more are needed to measure change.`); return res; }
+  for (let i=1;i<h.length;i++) res.changes.push({ts:h[i].ts, from:h[i-1].score, to:h[i].score, d:Math.round((h[i].score-h[i-1].score)*100)/100});
+  let zs = null;
+  if (res.changes.length >= ANOMALY_MIN){
+    const v = res.changes.map(c=>c.d), m = v.reduce((a,b)=>a+b,0)/v.length;
+    const sd = Math.sqrt(v.reduce((a,b)=>a+(b-m)**2,0)/(v.length-1));
+    zs = v.map(x => sd > 0 ? (x-m)/sd : 0);
+  }
+  res.changes.forEach((c,i)=>{ if (Math.abs(c.d) >= th){ const z = zs ? Math.round(zs[i]*100)/100 : null;
+    res.spikes.push({...c, dir:c.d>0?"up":"down", z, kind:(z!==null && Math.abs(z)>=ANOMALY_Z) ? "Statistical outlier" : "Size threshold"}); }});
+  res.latest = res.changes[res.changes.length-1];
+  let dir = 0, run = 0;
+  for (let i=res.changes.length-1;i>=0;i--){ const s = Math.sign(res.changes[i].d); if (!s) break; if (!dir) dir = s; if (s!==dir) break; run++; }
+  res.run = run; res.trend = run ? (dir>0?"rising":"falling") : "flat";
+  if (run >= runLen){
+    res.accel = {dir:res.trend, len:run, total:Math.round(res.changes.slice(-run).reduce((a,c)=>a+c.d,0)*10)/10};
+    res.msgs.push(`${run} ${res.trend} readings in a row. This shows recent direction only. It does not predict a crisis or a turnaround.`);
+  }
+  if (!zs) res.msgs.push(`Outlier detection starts after ${ANOMALY_MIN} changes (you have ${res.changes.length}), so big jumps are judged by size only.`);
+  return res;
+}
+
+/* ================= State & storage ================= */
+const state = {rows:[], manual:null, db:null, user:null, canWrite:true, mode:"connecting", loaded:false, last:null};
+const store = { get(k,d){ try{ const v = localStorage.getItem(k); return v===null?d:JSON.parse(v);}catch{ return d; } }, set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch{} } };
+let TH = store.get("aurum.th", 10), RUN = store.get("aurum.run", 3);
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmtT = ts => { const d = new Date(ts); return isNaN(d) ? String(ts) : d.toLocaleString(undefined,{year:"numeric",month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"}); };
+const fmtD = ts => { const d = new Date(ts); return isNaN(d) ? String(ts) : d.toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"}); };
+const f1 = x => (Math.round(x*10)/10).toFixed(1);
+const sgn = x => (x>0?"+":"") + f1(x);
+const srcTag = s => s==="sample" ? '<span class="tag sample">sample</span>' : s==="legacy_csv" ? '<span class="tag legacy">old log</span>' : "";
+const docId = (prefix, ts, extra) => (prefix + ts.replace(/[^0-9A-Za-z]/g,"") + "_" + extra).slice(0,180);
+
+function sorted(){ return cleanRows(state.rows).rows; }
+
+async function boot(){
+  renderAll();
+  if (!window.claude || !window.claude.use){ state.mode = "local"; renderAll(); return; }
+  const [db, user] = await Promise.all([claude.use("db"), claude.use("user")]);
+  state.db = db; state.user = user;
+  if (!db){ state.mode = "local"; renderAll(); return; }
+  state.mode = "live";
+  try { const w = user ? await user.can("data.write") : null; if (w === false) state.canWrite = false; } catch {}
+  db.collection("readings").limit(1000).onSnapshot(snap => {
+    state.rows = snap.docs.map(d => ({id:d.id, ...d.data()}));
+    state.loaded = true; renderAll();
+  }, e => { state.mode = "error"; state.err = e.code; renderAll(); });
+  db.doc("settings/manual").onSnapshot(s => { state.manual = s.exists ? s.data() : null; renderManual(); }, () => {});
+}
+
+async function saveReading(res, note, source="user", ts){
+  ts = ts || new Date().toISOString();
+  const doc = {ts, score:res.score, inputs:res.inputs, comp:res.comp, status:res.status, signal:res.signal, bias:res.bias,
+    regime:res.regime, heat:res.heat, agreement:res.agreement, model:res.model, source, note:note||"", input_source: source==="user" ? (inputSource.kind || "manual") : source};
+  const id = docId(source==="user"?"R":source==="sample"?"S":"L", ts, source==="legacy_csv" ? String(res.score).replace(".","p") : Math.random().toString(36).slice(2,8));
+  if (state.mode !== "live"){ state.rows.push({id, ...doc}); renderAll(); return "local"; }
+  await state.db.collection("readings").doc(id).set(doc);
+  return "saved";
+}
+async function deleteReading(id){
+  if (state.mode !== "live"){ state.rows = state.rows.filter(r=>r.id!==id); renderAll(); return; }
+  await state.db.collection("readings").doc(id).delete();
+}
+
+/* ================= Navigation ================= */
+const SECTIONS = [["overview","Overview"],["engine","AGSI Engine"],["market","Gold Market"],["stress","Stress Monitor"],["regimes","Market Regimes"],["history","Historical Analytics"],["news","Macro News"],["research","Research"],["method","Methodology"],["settings","Settings"]];
+$("nav").innerHTML = SECTIONS.map(([k,n])=>`<button type="button" data-go="${k}">${n}</button>`).join("");
+const validSection = h => SECTIONS.some(s=>s[0]===h);
+let CUR = (()=>{ try { const h = location.hash.slice(1); return validSection(h) ? h : "overview"; } catch { return "overview"; } })();
+function current(){ return CUR; }
+function go(k){
+  if (!validSection(k)) return;
+  CUR = k;
+  try { history.replaceState(null, "", "#" + k); } catch {}   // optional; some viewers block it
+  route(true);
+}
+document.addEventListener("click", e=>{ const t = e.target.closest("[data-go]"); if (t){ e.preventDefault(); go(t.dataset.go); } });
+function route(scroll){
+  const k = current();
+  for (const [s] of SECTIONS){ $("s-"+s).hidden = s !== k; }
+  document.querySelectorAll("#nav [data-go]").forEach(a => { if (a.dataset.go===k) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current"); });
+  renderCharts(k);
+  if (scroll && window.innerWidth <= 820) window.scrollTo(0,0);
+}
+window.addEventListener("hashchange", ()=>{ try { const h = location.hash.slice(1); if (validSection(h) && h !== CUR){ CUR = h; route(true); } } catch {} });
+
+/* ================= Charts ================= */
+const charts = {};
+function css(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+function mk(id, cfg){ if (charts[id]) charts[id].destroy(); const el = $(id); if (!el || !window.Chart) return; charts[id] = new Chart(el, cfg); }
+const bandsPlugin = {id:"bands", beforeDraw(c){ const y=c.scales.y, a=c.chartArea, x=c.ctx; if(!y) return;
+  [[0,30,"--calm"],[30,60,"--watch"],[60,80,"--rising"],[80,100,"--stress"]].forEach(([lo,hi,t])=>{ x.save(); x.globalAlpha=.07; x.fillStyle=css(t);
+    x.fillRect(a.left, y.getPixelForValue(hi), a.right-a.left, y.getPixelForValue(lo)-y.getPixelForValue(hi)); x.restore(); }); }};
+function baseOpts(extra={}){ return Object.assign({maintainAspectRatio:false, animation:false, interaction:{mode:"index",intersect:false},
+  plugins:{legend:{labels:{color:css("--muted"),boxWidth:10}}, tooltip:{backgroundColor:css("--well"),borderColor:css("--line"),borderWidth:1,titleColor:css("--text"),bodyColor:css("--text")}},
+  scales:{x:{ticks:{color:css("--dim"),maxTicksLimit:7},grid:{color:css("--line")}}, y:{ticks:{color:css("--dim")},grid:{color:css("--line")}}}}, extra); }
+function agsiChart(id, rows){
+  const labels = rows.map(r=>fmtD(r.ts));
+  const real = rows.map(r=>r.source==="sample"?null:r.score), samp = rows.map(r=>r.source==="sample"?r.score:null);
+  const ds = [];
+  if (real.some(v=>v!==null)) ds.push({label:"Your readings", data:real, borderColor:css("--gold"), backgroundColor:css("--gold")});
+  if (samp.some(v=>v!==null)) ds.push({label:"Sample (made-up)", data:samp, borderColor:css("--sample"), backgroundColor:css("--sample"), borderDash:[5,4]});
+  ds.forEach(d=>Object.assign(d,{borderWidth:2, pointRadius:rows.length>50?0:2.5, tension:.2, spanGaps:false}));
+  const o = baseOpts(); o.scales.y.min=0; o.scales.y.max=100; o.plugins.legend.display = ds.length>1;
+  mk(id,{type:"line", data:{labels, datasets:ds}, options:o, plugins:[bandsPlugin]});
+}
+function changeChart(id, changes){
+  const o = baseOpts(); o.plugins.legend.display=false;
+  mk(id,{type:"bar", data:{labels:changes.map(c=>fmtD(c.ts)), datasets:[{label:"Change (points)", data:changes.map(c=>c.d),
+    backgroundColor:changes.map(c=>Math.abs(c.d)>=TH ? (c.d>0?css("--stress"):css("--calm")) : "rgba(143,156,180,.4)")}]}, options:o});
+}
+function countChart(id, obj){
+  const keys = Object.keys(obj), col = {"Calm accumulation phase":"--calm","Transition phase":"--watch","Liquidity stress phase":"--rising","Crisis regime":"--stress",
+    "No stress signal":"--calm","Monitor":"--watch","Stress building":"--rising","Systemic stress alert":"--stress"};
+  const o = baseOpts({indexAxis:"y"}); o.plugins.legend.display=false; o.scales.x.ticks.precision=0;
+  mk(id,{type:"bar", data:{labels:keys, datasets:[{data:keys.map(k=>obj[k]), backgroundColor:keys.map(k=>css(col[k]||"--gold"))}]}, options:o});
+}
+function renderCharts(k){
+  const rows = sorted();
+  if (k==="overview" && rows.length){ agsiChart("cOv", rows); const a = analyse(rows,TH,RUN); if (a.changes.length) changeChart("cOvChg", a.changes);
+    const sig = {}; rows.forEach(r=>sig[r.signal]=(sig[r.signal]||0)+1); countChart("cOvSig", sig); }
+  if (k==="stress"){ const a = analyse(rows,TH,RUN); if (a.changes.length) changeChart("cSt", a.changes); }
+  if (k==="regimes" && rows.length){ agsiChart("cRg", rows); const d={}; BANDS.forEach(b=>d[b.regime]=0); rows.forEach(r=>d[r.regime]=(d[r.regime]||0)+1); countChart("cRgD", d); }
+  if (k==="history"){ const h = filtered(); if (h.length) agsiChart("cHi", h); }
+}
+
+/* ================= Renderers ================= */
+function renderStatus(){
+  let h = "";
+  if (state.mode==="local") h = '<div class="banner warn">Saving isn\'t available on this copy of the page, so readings you add will disappear when you close it. Your saved history lives in the AURUM page in your Claude account.</div>';
+  else if (state.mode==="error") h = `<div class="banner warn">Saved readings couldn't be loaded (${esc(state.err)}). Reload the page to try again.</div>`;
+  else if (state.mode==="live" && !state.canWrite) h = '<div class="banner">You can view these readings, but only the owner can add or change them.</div>';
+  const last = sorted().at(-1);
+  if (last && last.source==="sample") h += '<div class="banner sample">The latest reading is <b>sample data</b> (made up for practice). It says nothing about the real gold market. Remove it under Settings.</div>';
+  $("status").innerHTML = h;
+}
+function meter(score){ return `<div class="meter"><i style="left:${score}%"></i></div><div class="ticks">${[0,30,60,80,100].map(t=>`<span style="left:${t}%;${t===0?"transform:none":t===100?"transform:translateX(-100%)":""}">${t}</span>`).join("")}</div>`; }
+
+function renderOverview(){
+  const rows = sorted();
+  if (state.mode==="live" && !state.loaded){ $("ov").innerHTML = '<div class="empty">Loading your readings…</div>'; return; }
+  if (!rows.length){ $("ov").innerHTML = `<div class="empty"><b>No readings saved yet</b>Record your first reading in the <button type="button" class="linkbtn" data-go="engine">AGSI Engine</button>, import your old log or load practice data in <button type="button" class="linkbtn" data-go="settings">Settings</button>.</div>`; return; }
+  const L = rows.at(-1), P = rows.at(-2), b = classify(L.score), a = analyse(rows,TH,RUN);
+  const d = P ? L.score - P.score : null;
+  const regimes = []; let prev=null; rows.forEach(r=>{ if (r.regime!==prev){ regimes.push({...r, from:prev}); prev=r.regime; } });
+  const counts = {}; state.rows.forEach(r=>counts[r.source]=(counts[r.source]||0)+1);
+  $("ov").innerHTML = `
+  <div class="grid c4">
+    <div class="card span2"><div class="eyebrow">AGSI score ${srcTag(L.source)}</div>
+      <div class="row" style="align-items:baseline;gap:14px"><span class="score t-${b.cls}">${f1(L.score)}</span><span class="muted num">/ 100</span>
+      ${d!==null?`<span class="num ${d>0?"t-stress":d<0?"t-calm":"muted"}">${sgn(d)} since last reading</span>`:""}</div>
+      ${meter(L.score)}
+      <p class="sm muted" style="margin:10px 0 0">Model status <b style="color:var(--text)">${esc(L.status)}</b> · ${fmtT(L.ts)}</p></div>
+    <div class="card"><div class="eyebrow">Stress heat level</div><span class="pill t-${b.cls}">${esc(L.heat)}</span>
+      <div class="big mt">${esc(L.regime)}</div><div class="sm muted">Market regime</div></div>
+    <div class="card"><div class="eyebrow">Market bias</div><div class="big">${esc(L.bias)}</div><div class="sm muted">Signal: ${esc(L.signal)}</div>
+      <p class="note">This is a label for the score band, not advice to buy or sell.</p></div>
+  </div>
+  <div class="grid c3 mt">
+    <div class="card"><div class="eyebrow">Component agreement <span class="tag exp">experimental</span></div>
+      ${L.agreement!=null?`<div class="big num">${Math.round(L.agreement)} / 100</div><p class="note">How closely the five figures point the same way. It isn't a probability or a measure of accuracy.</p>`:'<p class="sm muted">Not available for readings imported without their five figures.</p>'}</div>
+    <div class="card"><div class="eyebrow">Stress monitoring</div><dl class="kv">
+      <dt>Readings</dt><dd class="num">${a.n}</dd><dt>Latest change</dt><dd class="num">${a.latest?sgn(a.latest.d):"–"}</dd>
+      <dt>Current streak</dt><dd>${a.run} × ${a.trend}</dd><dt>Jumps of ${TH}+ pts</dt><dd class="num">${a.spikes.length}</dd></dl>
+      ${a.msgs.slice(0,1).map(m=>`<p class="note">${esc(m)}</p>`).join("")}<p class="sm mt"><button type="button" class="linkbtn" data-go="stress">Open Stress Monitor</button></p></div>
+    <div class="card"><div class="eyebrow">Data on record</div><dl class="kv">
+      ${Object.entries(counts).map(([k,n])=>`<dt>${{user:"Your readings",legacy_csv:"Old log",sample:"Sample (made-up)"}[k]||esc(k)}</dt><dd class="num">${n}</dd>`).join("")}</dl>
+      <p class="note">Charts only ever use saved readings.</p></div>
+  </div>
+  <div class="grid c2 mt">
+    <div class="card wide"><h2>AGSI over time</h2><div class="chart tall"><canvas id="cOv"></canvas></div></div>
+    <div class="card"><h2>Change between readings</h2>${a.changes.length?'<div class="chart"><canvas id="cOvChg"></canvas></div>':'<div class="empty">Needs two or more readings.</div>'}</div>
+    <div class="card"><h2>Signals so far</h2><div class="chart"><canvas id="cOvSig"></canvas></div></div>
+    <div class="card wide"><h2>Recent regime changes</h2><div class="tw"><table><tr><th>When</th><th>From</th><th>To</th><th class="r">AGSI</th><th></th></tr>
+      ${regimes.slice(-6).reverse().map(r=>`<tr><td class="num sm">${fmtD(r.ts)}</td><td class="muted">${esc(r.from||"Start of record")}</td><td>${esc(r.regime)}</td><td class="r num">${f1(r.score)}</td><td>${srcTag(r.source)}</td></tr>`).join("")}</table></div></div>
+  </div>`;
+}
+
+let lastResult = null, lastErrors = {};
+function renderEngine(){
+  INPUTS.forEach(s=>{ $("in-"+s.key).classList.toggle("bad", !!lastErrors[s.key]); $("er-"+s.key).textContent = lastErrors[s.key] || ""; });
+  $("btnSave").disabled = state.mode==="live" && !state.canWrite;
+  const R = lastResult;
+  const filled = INPUTS.filter(s=>$("in-"+s.key).value.trim()!=="").length;
+  const emptyMsg = Object.keys(lastErrors).length ? '<div class="empty"><b>Check the highlighted figure</b>The score appears as soon as all five figures are valid.</div>'
+    : filled === 0 ? '<div class="empty"><b>No result yet</b>Press Auto-fill, or type the five figures. The score updates as you type.</div>'
+    : `<div class="empty"><b>${5-filled} more figure${5-filled===1?"":"s"} needed</b>The score appears as soon as all five are filled in.</div>`;
+  $("result").innerHTML = !R ? emptyMsg : `
+    <div class="eyebrow">Result <span class="result-live">· updates as you type</span>${anySample()?' <span class="tag sample">uses sample figures</span>':""}</div>
+    <div class="row" style="align-items:baseline"><span class="score t-${R.cls}">${R.score.toFixed(2)}</span><span class="pill t-${R.cls}">${R.heat}</span></div>
+    ${meter(R.score)}
+    <dl class="kv mt"><dt>Status</dt><dd>${R.status}</dd><dt>Regime</dt><dd>${R.regime}</dd><dt>Signal</dt><dd>${R.signal}</dd><dt>Bias</dt><dd>${R.bias}</dd>
+      <dt>Agreement</dt><dd class="num">${R.agreement} <span class="tag exp">exp</span></dd><dt>Model</dt><dd class="num">${R.model}</dd></dl>
+    ${R.warnings.map(w=>`<p class="note">${esc(w)}</p>`).join("")}`;
+  const bd = $("breakdown"); bd.hidden = !R;
+  if (R) bd.innerHTML = `<h2>How the score was built</h2><div class="tw"><table><tr><th>Part</th><th>Your figure</th><th class="r">Stress 0–100</th><th class="r">Weight</th><th class="r">Points added</th><th style="width:24%"></th></tr>
+    ${INPUTS.map(s=>`<tr><td>${s.label}</td><td class="num">${R.inputs[s.key]}</td><td class="r num">${f1(R.comp[s.comp])}</td><td class="r num">${WEIGHTS[s.comp]*100}%</td><td class="r num">${R.contrib[s.comp].toFixed(2)}</td><td><div class="bar"><i style="width:${R.comp[s.comp]}%"></i></div></td></tr>`).join("")}
+    <tr><td colspan="4"><b>AGSI</b></td><td class="r num"><b>${R.score.toFixed(2)}</b></td><td></td></tr></table></div>`;
+}
+$("inputs").innerHTML = INPUTS.map(s=>`<label class="f" for="in-${s.key}"><span>${s.label}<span class="tip"><button type="button" class="tip-btn" aria-label="What is ${s.label}?" aria-expanded="false" aria-controls="tip-${s.key}">i</button><span class="tip-pop" role="tooltip" id="tip-${s.key}"><b>${s.label} · ${WEIGHTS[s.comp]*100}% weight.</b> ${TIPS[s.key]}</span></span></span>
+  <input id="in-${s.key}" name="${s.key}" inputmode="decimal" autocomplete="off"><small>${s.unit}<span class="src-chip" id="src-${s.key}"></span></small><div class="err" id="er-${s.key}"></div></label>`).join("");
+/* ================= Data pipeline =================
+   Providers return a raw object; DataService.normalize() maps it onto the five inputs.
+   Add a provider by registering a function that resolves to a plain object. */
+const FIELD_ALIASES = {
+  registered_inventory:["registered_inventory","registeredInventory","inventory","registered","physical"],
+  open_interest:["open_interest","openInterest","oi","paper"],
+  etf_flow:["etf_flow","etfFlow","etf","etf_flows"],
+  delivery_ratio:["delivery_ratio","deliveryRatio","delivery"],
+  macro_stress:["macro_stress","macroStress","macro"],
+};
+const DataService = {
+  providers: {
+    async json(text){ try { return JSON.parse(text); } catch { throw new Error("That isn't valid JSON. Check for missing quotes or commas."); } },
+    async file(file){ if (!file) throw new Error("Choose a file first."); if (file.size > 256*1024) throw new Error("That file is over 256 KB."); return DataService.providers.json(await file.text()); },
+    async rest(url, {timeoutMs=8000, headers={}} = {}){
+      let u; try { u = new URL(url); } catch { throw new Error("Enter a full web address starting with https://"); }
+      if (u.protocol !== "https:") throw new Error("Only secure (https://) addresses are allowed.");
+      const ctl = new AbortController(), timer = setTimeout(()=>ctl.abort(), timeoutMs);
+      try {
+        const r = await fetch(u.href, {headers:{Accept:"application/json", ...headers}, signal:ctl.signal, credentials:"omit"});
+        if (!r.ok) throw new Error(`The server answered with an error (${r.status}).`);
+        const text = await r.text(); if (text.length > 256*1024) throw new Error("The response is too large.");
+        return DataService.providers.json(text);
+      } catch(e){
+        if (e.name === "AbortError") throw new Error("The server took too long to answer.");
+        if (e instanceof TypeError) throw new Error("That address couldn't be reached from here. Pages hosted inside Claude can't call outside servers; the downloadable app can.");
+        throw e;
+      } finally { clearTimeout(timer); }
+    },
+  },
+  register(name, fn){ this.providers[name] = fn; },
+  normalize(raw){
+    const obj = raw && typeof raw === "object" ? (raw.inputs && typeof raw.inputs === "object" ? raw.inputs : (raw.data && typeof raw.data === "object" ? raw.data : raw)) : null;
+    if (!obj || Array.isArray(obj)) throw new Error("Expected a JSON object with the five figures.");
+    const values = {}, missing = [];
+    for (const s of INPUTS){
+      const k = FIELD_ALIASES[s.key].find(a => obj[a] !== undefined && obj[a] !== null && obj[a] !== "");
+      if (k === undefined) missing.push(s.label); else values[s.key] = obj[k];
+    }
+    const asOf = raw.as_of || raw.asOf || raw.date || null;
+    return {values, missing, asOf, source: raw.source || null};
+  },
+  async load(kind, arg, opts){
+    const fn = this.providers[kind]; if (!fn) throw new Error(`No data provider called "${kind}".`);
+    return this.normalize(await fn(arg, opts));
+  },
+};
+/* ===================================================================
+   fetchLatestAgsiData(): what the "Auto-fill latest data" button calls.
+
+   It asks the AURUM data service (GET /api/agsi-latest, the small
+   backend in the serverless/ folder) for the five latest figures. The
+   backend holds the API keys and fetches FRED, CFTC, SPDR GLD and CME
+   data. Keys never come to this page.
+
+   Any figure the service can't supply (or every figure, if no service
+   is connected) is filled from sampleAgsiData() and labelled "sample".
+
+   Which service is used:
+     <meta name="aurum-api" content="/api/agsi-latest">  in the page,
+     which the hosted copy (serverless/index.html) already has, or set
+     AGSI_API_URL_OVERRIDE below to a full https:// address.
+   Pages hosted inside Claude can't call outside servers, so this copy
+   uses sample figures until it runs from the hosted site.
+   =================================================================== */
+const AGSI_API_URL_OVERRIDE = "";   // e.g. "https://your-project.vercel.app/api/agsi-latest"
+const AGSI_API_URL = AGSI_API_URL_OVERRIDE || (()=>{ try { return document.querySelector('meta[name="aurum-api"]')?.content?.trim() || ""; } catch { return ""; } })();
+
+async function getAgsiService(url, timeoutMs=20000){
+  let u; try { u = new URL(url, location.href); } catch { throw new Error("the data service address is not valid"); }
+  const local = u.hostname === "localhost" || u.hostname === "127.0.0.1";
+  if (u.protocol !== "https:" && !(local && u.protocol === "http:")) throw new Error("the data service must use https://");
+  const ctl = new AbortController(), timer = setTimeout(()=>ctl.abort(), timeoutMs);
+  try {
+    const r = await fetch(u.href, {headers:{Accept:"application/json"}, signal:ctl.signal, credentials:"omit", cache:"no-cache"});
+    if (!r.ok) throw new Error(`the data service answered with an error (${r.status})`);
+    const text = await r.text(); if (text.length > 256*1024) throw new Error("the data service response is too large");
+    try { return JSON.parse(text); } catch { throw new Error("the data service did not return valid JSON"); }
+  } catch(e){
+    if (e.name === "AbortError") throw new Error("the data service took too long to answer");
+    if (e instanceof TypeError) throw new Error("the data service couldn't be reached from this page");
+    throw e;
+  } finally { clearTimeout(timer); }
+}
+
+/* Sample figures for testing. Illustrative ranges only, NOT current market data. */
+function sampleAgsiData(){
+  const u = (lo, hi, dp) => roundHalfUp(lo + Math.random()*(hi-lo), dp);
+  return {
+    registered_inventory: u(14, 24, 2),    // million troy oz
+    open_interest:        u(420, 580, 1),  // thousand contracts
+    etf_flow:             u(-35, 35, 1),   // tonnes (negative = outflow)
+    delivery_ratio:       u(2.5, 12, 2),   // % of open interest
+    macro_stress:         u(25, 65, 0),    // 0–100 rating
+  };
+}
+
+async function fetchLatestAgsiData(){
+  const values = {}, meta = {}, problems = [];
+  let service = null;
+  if (AGSI_API_URL){
+    try {
+      const j = await getAgsiService(AGSI_API_URL);
+      service = {model: j.model || null, generatedAt: j.generated_at || null, complete: !!j.complete};
+      if (j.model && j.model !== MODEL) problems.push(`The data service runs model ${j.model}, this page runs ${MODEL}`);
+      for (const s of INPUTS){
+        const e = j.inputs && j.inputs[s.key];
+        const v = e && e.value !== null && e.value !== undefined ? Number(e.value) : NaN;
+        if (e && e.status === "ok" && Number.isFinite(v) && v >= s.min && v <= s.max){
+          values[s.key] = v; meta[s.key] = {kind:"live", source:e.source || "AURUM data service", asOf:e.as_of || null};
+        } else if (e){ problems.push(`${s.label}: ${e.reason || "not available"}`); }
+      }
+    } catch(e){ problems.push(`Live data unavailable: ${e.message}`); }
+  }
+  const sample = sampleAgsiData();
+  for (const s of INPUTS){
+    if (values[s.key] === undefined){ values[s.key] = sample[s.key]; meta[s.key] = {kind:"sample", source:"AURUM sample generator", asOf:null}; }
+  }
+  return {values, meta, problems, service, fetchedAt: new Date().toISOString(),
+          liveCount: INPUTS.filter(s=>meta[s.key].kind==="live").length};
+}
+
+/* Where each box's current number came from: manual | sample | live | feed */
+const fieldSrc = Object.fromEntries(INPUTS.map(s=>[s.key, "manual"]));
+let lastFill = null;   // {fetchedAt, liveCount, meta, problems}
+function anySample(){ return INPUTS.some(s=>fieldSrc[s.key]==="sample"); }
+function paintChips(){
+  for (const s of INPUTS){
+    const c = $("src-"+s.key), k = fieldSrc[s.key];
+    c.textContent = {sample:"sample", live:"live", feed:"from feed"}[k] || "";
+    c.className = "src-chip" + (k==="sample" ? " sample" : "");
+  }
+}
+function renderAfStatus(){
+  const el = $("afStatus");
+  const edited = INPUTS.filter(s=>fieldSrc[s.key]==="manual").length;
+  if (!lastFill){
+    el.innerHTML = AGSI_API_URL ? "Connected to the <b>AURUM data service</b>. Auto-fill fetches the latest published figures; any it can't get are filled with labelled sample data."
+      : "This copy isn't connected to the live data service, so auto-fill uses <b>sample figures</b> for testing. Every box stays editable.";
+    return;
+  }
+  const when = fmtT(lastFill.fetchedAt), n = lastFill.liveCount;
+  const lead = n === 5 ? `<span class="tag live">live</span> <b>Data updated as of ${when}.</b>`
+    : n === 0 ? `<span class="tag sample">sample</span> <b>Sample figures generated ${when}.</b> These are for testing, not real market data.`
+    : `<b>Data updated as of ${when}:</b> ${n} live figure${n===1?"":"s"}, ${5-n} sample.`;
+  const asOfs = [...new Set(INPUTS.map(s=>lastFill.meta[s.key]).filter(m=>m.kind==="live" && m.asOf).map(m=>m.asOf))];
+  el.innerHTML = lead + (asOfs.length ? ` Latest source dates: ${asOfs.map(esc).join(", ")}.` : "")
+    + (edited ? ` ${edited} figure${edited===1?"":"s"} changed by you.` : "")
+    + (lastFill.problems.length ? `<br><span class="t-rising">${lastFill.problems.map(esc).join("; ")}</span>` : "");
+}
+function liveCalc(){
+  const raw = readForm(), {errors} = validate(raw), errs = {};
+  let filled = 0;
+  for (const s of INPUTS){ if (String(raw[s.key]).trim() === "") continue; filled++; if (errors[s.key]) errs[s.key] = errors[s.key]; }
+  lastErrors = errs;
+  lastResult = (filled === INPUTS.length && !Object.keys(errs).length) ? calculate(raw) : null;
+  renderEngine();
+}
+let inputSource = {kind:"manual"};
+function setInputs(values, kind="api", label=""){
+  let n = 0;
+  for (const s of INPUTS){
+    if (values[s.key] !== undefined){ $("in-"+s.key).value = String(values[s.key]); fieldSrc[s.key] = kind==="sample"||kind==="live" ? kind : "feed"; n++; }
+  }
+  inputSource = {kind, label};
+  paintChips(); liveCalc();
+  return n;
+}
+async function autofill(){
+  const btn = $("btnAutofill"); btn.disabled = true; const old = btn.textContent; btn.textContent = "Fetching…";
+  $("saveMsg").textContent = "";
+  try {
+    const r = await fetchLatestAgsiData();
+    for (const s of INPUTS){ $("in-"+s.key).value = String(r.values[s.key]); fieldSrc[s.key] = r.meta[s.key].kind; }
+    lastFill = r; paintChips(); liveCalc(); renderAfStatus();
+  } catch(e){ $("afStatus").innerHTML = `<span class="t-stress">${esc(e.message || "Auto-fill failed.")}</span>`; }
+  finally { btn.disabled = false; btn.textContent = old; }
+}
+$("btnAutofill").addEventListener("click", autofill);
+$("btnClear").addEventListener("click", ()=>{
+  INPUTS.forEach(s=>{ $("in-"+s.key).value = ""; fieldSrc[s.key] = "manual"; });
+  lastFill = null; inputSource = {kind:"manual"}; $("saveMsg").textContent = "";
+  paintChips(); liveCalc(); renderAfStatus();
+});
+async function runFeed(kind, arg){
+  const msg = $("feedMsg"); msg.className = "sm muted"; msg.textContent = "Loading…";
+  try {
+    const r = await DataService.load(kind, arg);
+    lastFill = null; renderAfStatus();
+    const n = setInputs(r.values, kind, r.source || "");
+    if (r.asOf && !$("note").value) $("note").value = `Data as of ${String(r.asOf).slice(0,40)}${r.source?` from ${String(r.source).slice(0,60)}`:""}`;
+    msg.className = "sm " + (r.missing.length ? "t-rising" : "t-calm");
+    msg.textContent = `Filled ${n} of 5 figures.` + (r.missing.length ? ` Missing: ${r.missing.join(", ")}.` : "") + " The score below has updated; check the figures before saving.";
+  } catch(e){ msg.className = "sm t-stress"; msg.textContent = e.message || "Couldn't load that data."; }
+}
+$("btnFeedText").addEventListener("click", ()=>runFeed("json", $("feedText").value));
+$("btnFeedUrl").addEventListener("click", ()=>runFeed("rest", $("feedUrl").value.trim()));
+$("feedFile").addEventListener("change", e=>{ runFeed("file", e.target.files[0]); e.target.value = ""; });
+$("inputs").addEventListener("input", e=>{
+  const k = e.target.id?.replace("in-",""); if (!(k in fieldSrc)) return;
+  fieldSrc[k] = "manual"; paintChips(); liveCalc(); if (lastFill) renderAfStatus();
+});
+// Public hook for scripts or a future server push: AURUM.setInputs({...}) / AURUM.DataService.register(...)
+window.AURUM = Object.freeze({MODEL, WEIGHTS, BANDS, INPUTS, calculate, classify, normalize, roundHalfUp, setInputs, DataService, apiUrl: AGSI_API_URL, fetchLatestAgsiData, sampleAgsiData});
+
+/* tooltips: hover on desktop, tap to toggle, Escape or outside tap to close */
+function closeTips(except){ document.querySelectorAll(".tip.open").forEach(t=>{ if (t!==except){ t.classList.remove("open"); t.querySelector(".tip-btn").setAttribute("aria-expanded","false"); } }); }
+document.addEventListener("click", e=>{
+  const btn = e.target.closest(".tip-btn");
+  if (btn){ e.preventDefault(); const t = btn.parentElement, open = !t.classList.contains("open"); closeTips(t); t.classList.toggle("open", open); btn.setAttribute("aria-expanded", String(open)); return; }
+  if (!e.target.closest(".tip")) closeTips();
+});
+document.addEventListener("keydown", e=>{ if (e.key === "Escape") closeTips(); });
+
+function readForm(){ const raw = {}; INPUTS.forEach(s=>raw[s.key]=$("in-"+s.key).value); return raw; }
+function doCalc(){ const r = calculate(readForm()); if (r.errors){ lastErrors = r.errors; lastResult = null; } else { lastErrors = {}; lastResult = r; } renderEngine(); return r; }
+$("calcForm").addEventListener("submit", e=>{ e.preventDefault(); $("saveMsg").textContent=""; doCalc(); });
+$("btnSave").addEventListener("click", async ()=>{
+  const r = doCalc(); if (r.errors){ $("saveMsg").textContent = "Fix the highlighted figures, then save."; return; }
+  $("btnSave").disabled = true; $("saveMsg").textContent = "Saving…";
+  const kinds = [...new Set(INPUTS.map(s=>fieldSrc[s.key]))];
+  inputSource = {kind: kinds.length === 1 ? kinds[0] : "mixed"};
+  const isSample = anySample();
+  const note = $("note").value.trim() || (isSample ? "Includes sample figures from auto-fill" : "");
+  try {
+    const how = await saveReading(r, note, isSample ? "sample" : "user");
+    $("saveMsg").textContent = how!=="saved" ? "Added for this visit only (saving isn't available here)."
+      : isSample ? `Saved as a sample reading (AGSI ${r.score.toFixed(2)}), because it includes sample figures. Replace them with real numbers to record a real reading.`
+      : `Saved: AGSI ${r.score.toFixed(2)}`;
+    $("note").value="";
+  }
+  catch(e){ $("saveMsg").textContent = e && e.code==="invalid_argument" ? "Only the owner can save readings." : "Couldn't save. Check your connection and try again."; }
+  finally { $("btnSave").disabled = state.mode==="live" && !state.canWrite; }
+});
+$("effects").innerHTML = `<tr><th>Figure</th><th class="r">Weight</th><th>Range (0 → 100 stress)</th><th>Effect</th></tr>` +
+  INPUTS.map(s=>`<tr><td>${s.label}</td><td class="r num">${WEIGHTS[s.comp]*100}%</td><td class="num sm">${s.up?`${s.lo} → ${s.hi}`:`${s.hi} → ${s.lo}`}</td><td class="sm muted">${s.effect}</td></tr>`).join("");
+
+function renderManual(){
+  const m = state.manual;
+  $("manual").innerHTML = m ? `<div class="big num">${Number(m.price).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</div><div class="sm muted">Typed in ${fmtT(m.at)}. Not a live feed.</div>` : '<div class="sm muted">No reference price saved.</div>';
+}
+$("manualForm").addEventListener("submit", async e=>{
+  e.preventDefault(); $("manualErr").textContent="";
+  const v = Number($("manualPrice").value.replace(/[,\s]/g,""));
+  if (!Number.isFinite(v) || v < 100 || v > 100000){ $("manualErr").textContent = "Enter a price between 100 and 100,000."; return; }
+  const doc = {price:v, at:new Date().toISOString()};
+  if (state.mode!=="live"){ state.manual = doc; renderManual(); return; }
+  try { await state.db.doc("settings/manual").set(doc); $("manualPrice").value=""; } catch { $("manualErr").textContent = "Couldn't save the price. Only the owner can change it."; }
+});
+
+function renderStress(){
+  $("th").value = TH; $("runLen").value = RUN;
+  const a = analyse(sorted(), TH, RUN);
+  $("st").innerHTML = `
+  <div class="grid c4">
+    <div class="card"><div class="eyebrow">Readings</div><div class="big num">${a.n}</div>${a.dropped?`<div class="sm t-rising">${a.dropped} faulty or duplicate row(s) skipped</div>`:""}</div>
+    <div class="card"><div class="eyebrow">Latest change</div><div class="big num">${a.latest?sgn(a.latest.d):"–"}</div></div>
+    <div class="card"><div class="eyebrow">Current streak</div><div class="big">${a.run} × ${a.trend}</div></div>
+    <div class="card"><div class="eyebrow">Streak flag</div>${a.accel?`<span class="pill t-${a.accel.dir==="rising"?"stress":"calm"}">${a.accel.len} ${a.accel.dir}, ${sgn(a.accel.total)} pts</span>`:'<span class="muted">None</span>'}</div>
+  </div>
+  ${a.msgs.map(m=>`<p class="note">${esc(m)}</p>`).join("")}
+  <div class="card mt"><h2>Change between readings</h2>${a.changes.length?`<div class="chart"><canvas id="cSt"></canvas></div><p class="sm dim">Red and green bars are jumps of ${TH} points or more (red = stress up, green = stress down).</p>`:'<div class="empty">Save at least two readings to see changes.</div>'}</div>
+  <div class="card mt"><h2>Big jumps</h2>${a.spikes.length?`<div class="tw"><table><tr><th>When</th><th class="r">From</th><th class="r">To</th><th class="r">Change</th><th class="r">z-score</th><th>Type</th></tr>
+    ${a.spikes.slice().reverse().map(s=>`<tr><td class="num sm">${fmtD(s.ts)}</td><td class="r num">${f1(s.from)}</td><td class="r num">${f1(s.to)}</td><td class="r num ${s.d>0?"t-stress":"t-calm"}">${sgn(s.d)}</td><td class="r num">${s.z??"–"}</td><td><span class="tag ${s.kind==="Statistical outlier"?"exp":""}">${s.kind}</span></td></tr>`).join("")}</table></div>`
+    :`<div class="empty">No jumps of ${TH} points or more.</div>`}
+    <p class="note">"Size threshold" means the change was bigger than the jump size you set. "Statistical outlier" means it was also unusual compared with your history (z-score of ${ANOMALY_Z} or more). Neither one predicts what happens next.</p></div>`;
+}
+function setNum(el, min, max, cb){ el.addEventListener("change", ()=>{ const v = Number(el.value); if (Number.isFinite(v) && v>=min && v<=max){ cb(v); renderStress(); renderOverview(); renderCharts(current()); } else el.value = el.id==="th"?TH:RUN; }); }
+setNum($("th"), .5, 100, v=>{ TH=v; store.set("aurum.th",v); });
+setNum($("runLen"), 2, 50, v=>{ RUN=Math.round(v); store.set("aurum.run",RUN); });
+
+function renderRegimes(){
+  const rows = sorted(), n = rows.length, dist = {}; BANDS.forEach(b=>dist[b.regime]=0); rows.forEach(r=>dist[r.regime]=(dist[r.regime]||0)+1);
+  const trans = []; let prev=null; rows.forEach(r=>{ if (r.regime!==prev){ trans.push({...r, from:prev}); prev=r.regime; } });
+  $("rg").innerHTML = `<div class="grid c4">${BANDS.map((b,i)=>`<div class="card"><div class="eyebrow num">AGSI ${b.min}–${i<3?BANDS[i+1].min-0.01:100}</div>
+    <span class="pill t-${b.cls}">${b.heat}</span><div class="big mt">${b.regime}</div><div class="sm muted">${dist[b.regime]} reading${dist[b.regime]===1?"":"s"}${n?` · ${Math.round(1000*dist[b.regime]/n)/10}%`:""}</div></div>`).join("")}</div>
+    ${!n?'<div class="empty mt"><b>No readings yet</b>Regime history appears once readings are saved.</div>':`
+    <div class="grid c2 mt"><div class="card"><h2>AGSI against the regime bands</h2><div class="chart"><canvas id="cRg"></canvas></div></div>
+      <div class="card"><h2>Readings in each regime</h2><div class="chart"><canvas id="cRgD"></canvas></div></div></div>
+    <div class="card mt"><h2>Every regime change</h2><div class="tw"><table><tr><th>When</th><th>From</th><th>To</th><th class="r">AGSI</th><th></th></tr>
+      ${trans.slice().reverse().map(r=>`<tr><td class="num sm">${fmtD(r.ts)}</td><td class="muted">${esc(r.from||"Start of record")}</td><td>${esc(r.regime)}</td><td class="r num">${f1(r.score)}</td><td>${srcTag(r.source)}</td></tr>`).join("")}</table></div></div>`}`;
+}
+
+function filtered(){
+  const from = $("hFrom").value, to = $("hTo").value, inc = $("hSample").value==="1";
+  return sorted().filter(r => (inc || r.source!=="sample") && (!from || r.ts.slice(0,10) >= from) && (!to || r.ts.slice(0,10) <= to));
+}
+let pendingDel = null;
+function renderHistory(){
+  const rows = filtered(), canDel = state.mode!=="live" || state.canWrite;
+  $("hi").innerHTML = !rows.length ? '<div class="empty"><b>No readings in this range</b>Change the dates or save a reading.</div>' : `
+    <div class="card"><h2>AGSI over time · ${rows.length} reading${rows.length===1?"":"s"}</h2><div class="chart tall"><canvas id="cHi"></canvas></div></div>
+    <div class="card mt"><div class="tw"><table><tr><th>Date</th><th class="r">AGSI</th><th>Heat</th><th>Regime</th><th>Bias</th>${INPUTS.map(s=>`<th class="r">${{registered_inventory:"Inv.",open_interest:"OI",etf_flow:"ETF",delivery_ratio:"Deliv.",macro_stress:"Macro"}[s.key]}</th>`).join("")}<th>Note</th><th></th></tr>
+    ${rows.slice().reverse().map(r=>`<tr><td class="num sm" style="white-space:nowrap">${fmtT(r.ts)} ${srcTag(r.source)}</td><td class="r num"><b>${f1(r.score)}</b></td><td class="t-${classify(r.score).cls}">${esc(r.heat)}</td><td class="sm">${esc(r.regime)}</td><td class="sm">${esc(r.bias)}</td>
+      ${INPUTS.map(s=>`<td class="r num sm">${r.inputs && r.inputs[s.key]!=null ? r.inputs[s.key] : "–"}</td>`).join("")}<td class="sm muted">${esc(r.note)}</td>
+      <td>${canDel?(pendingDel===r.id?`<span class="confirm"><button class="btn danger" data-del="${esc(r.id)}">Delete</button><button class="btn ghost" data-cancel>Keep</button></span>`:`<button class="btn ghost" data-ask="${esc(r.id)}" aria-label="Delete reading">✕</button>`):""}</td></tr>`).join("")}
+    </table></div></div>`;
+}
+$("hi").addEventListener("click", async e=>{
+  const t = e.target.closest("button"); if (!t) return;
+  if (t.dataset.ask){ pendingDel = t.dataset.ask; renderHistory(); renderCharts("history"); }
+  else if (t.hasAttribute("data-cancel")){ pendingDel = null; renderHistory(); renderCharts("history"); }
+  else if (t.dataset.del){ const id = t.dataset.del; pendingDel = null; try { await deleteReading(id); } catch { $("exportMsg").textContent = "Couldn't delete that reading."; } }
+});
+["hFrom","hTo","hSample"].forEach(id=>$(id).addEventListener("change", ()=>{ renderHistory(); renderCharts("history"); }));
+$("btnExport").addEventListener("click", async ()=>{
+  const rows = filtered(); if (!rows.length){ $("exportMsg").textContent = "Nothing to download in this range."; return; }
+  const cols = ["timestamp","agsi","heat","regime","status","signal","bias",...INPUTS.map(s=>s.key),"agreement","model","source","note"];
+  const q = v => { const s = String(v ?? ""); return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; };
+  const csv = [cols.join(","), ...rows.map(r=>[r.ts,r.score,r.heat,r.regime,r.status,r.signal,r.bias,...INPUTS.map(s=>r.inputs?.[s.key]),r.agreement,r.model,r.source,r.note].map(q).join(","))].join("\n");
+  const dl = window.claude ? await claude.use("downloads") : null;
+  if (!dl){ $("exportMsg").textContent = "Downloads aren't available in this view."; return; }
+  try { await dl.save({filename:`aurum_agsi_${new Date().toISOString().slice(0,10)}.csv`, data:csv}); $("exportMsg").textContent = `Downloaded ${rows.length} readings.`; }
+  catch(e){ $("exportMsg").textContent = e && e.code==="declined" ? "Download cancelled." : "The download didn't go through. Try again."; }
+});
+
+$("newsGrid").innerHTML = [
+  ["Federal Reserve decisions","https://www.federalreserve.gov/newsevents/pressreleases.htm","Interest-rate decisions and statements. Higher rates usually make gold less attractive; cuts usually help it."],
+  ["US inflation (CPI)","https://www.bls.gov/cpi/","Monthly inflation figures. Rising inflation can support gold, but can also lead to higher rates."],
+  ["US jobs report","https://www.bls.gov/ces/","Monthly employment figures. A weaker job market can raise hopes of rate cuts, which tends to help gold."],
+  ["US Treasury yields","https://fred.stlouisfed.org/series/DFII10","The 10-year real yield. When it rises, holding gold (which pays no interest) costs more."],
+  ["US dollar","https://fred.stlouisfed.org/series/DTWEXBGS","Gold is priced in dollars, so a stronger dollar has usually weighed on it."],
+  ["Central-bank gold buying & ETF flows","https://www.gold.org/goldhub/data","World Gold Council data on central-bank purchases and gold ETF holdings."],
+  ["Upcoming release dates","https://fred.stlouisfed.org/releases/calendar","When the next inflation, jobs and rate figures come out."],
+  ["Geopolitics","https://www.reuters.com/markets/commodities/","Wars, sanctions and trade disputes often push investors toward gold."],
+].map(([t,u,w])=>`<div class="card"><h2><a href="${u}" target="_blank" rel="noopener">${t}</a></h2><p class="sm muted" style="margin:0">${w}</p></div>`).join("") +
+ '<p class="note wide">These descriptions are general tendencies seen in the past. They often break down, and none of them is a forecast.</p>';
+
+function brief(){
+  const rows = sorted(), L = rows.at(-1), P = rows.at(-2), a = analyse(rows,TH,RUN);
+  const b = {cond:[], up:[], down:[], scen:[], inval:[], lim:[]};
+  if (!L){ b.lim.push("No readings saved yet. Record one in the AGSI Engine."); return {b, L}; }
+  b.cond.push(`Latest AGSI is ${f1(L.score)} (${L.heat}, ${L.regime}), recorded ${fmtT(L.ts)}.`);
+  if (L.source==="sample") b.lim.push("The latest reading is sample data, so this brief is for practice only.");
+  if (P) b.cond.push(`That is ${sgn(L.score-P.score)} points from the reading before.`);
+  if (a.accel) b.cond.push(`${a.accel.len} ${a.accel.dir} readings in a row, ${sgn(a.accel.total)} points in total. This is recent direction, not a forecast.`);
+  if (a.spikes.length){ const s = a.spikes.at(-1); b.cond.push(`Most recent big jump: ${sgn(s.d)} points on ${fmtD(s.ts)}.`); }
+  if (L.comp){ INPUTS.map(s=>[s, L.comp[s.comp]]).sort((x,y)=>y[1]-x[1]).forEach(([s,v])=>{
+    (v>=50?b.up:b.down).push(`${s.label}: ${f1(v)} out of 100 (worth ${WEIGHTS[s.comp]*100}% of the score).`); }); }
+  else b.lim.push("The latest reading came from the old log, so its five parts aren't known.");
+  const edges = BANDS.slice(1).map(x=>x.min), nxt = edges.find(e=>e>L.score), low = edges.filter(e=>e<=L.score).at(-1);
+  if (nxt!==undefined) b.scen.push(`Stress rises: ${f1(nxt-L.score)} more points would move AGSI into the next band (${nxt}+).`);
+  if (low!==undefined) b.scen.push(`Stress eases: dropping below ${low} (${f1(L.score-low)} points down) would move it down a band.`);
+  b.scen.push("No change: readings stay in the current band and the picture stays the same.");
+  b.inval.push(`The "${L.regime}" reading stops applying if the next AGSI lands outside its band.`);
+  b.inval.push("If any of the five figures turn out to be wrong or are revised, the score needs recalculating.");
+  b.lim.push(`${a.n} reading${a.n===1?"":"s"} on record.`);
+  b.lim.push("No live gold price or economic news is connected, so outside evidence isn't included.");
+  b.lim.push("The weights and ranges are untested assumptions.");
+  return {b, L, a};
+}
+function renderResearch(){
+  const {b, L} = brief();
+  const sec = (t, items, e) => `<div class="card"><h2>${t}</h2>${items.length?`<ul class="list">${items.map(i=>`<li>${esc(i)}</li>`).join("")}</ul>`:`<p class="sm muted" style="margin:0">${e}</p>`}</div>`;
+  $("rs").innerHTML = `<div class="grid c2">
+    ${sec("Where things stand", b.cond, "No readings yet.")}${sec("What the data can't tell you", b.lim, "")}
+    ${sec("Pushing stress up", b.up, "No part is at 50 or above.")}${sec("Keeping stress down", b.down, "No part is below 50.")}
+    ${sec("What could happen next", b.scen, "Needs at least one reading.")}${sec("What would change this view", b.inval, "Needs at least one reading.")}
+    <div class="card wide"><h2>Explain it in plain English</h2>
+      <p class="sm muted" style="margin-top:0">Claude rewrites the brief above in everyday language, using only those numbers. It won't add prices, news or predictions.</p>
+      <div class="row"><button class="btn" id="btnExplain" ${L?"":"disabled"}>Explain this reading</button><span class="sm muted" id="aiMsg" role="status"></span></div>
+      <div class="ai mt" id="aiOut"></div></div></div>`;
+  $("aiOut").textContent = aiText;
+  $("btnExplain")?.addEventListener("click", explain);
+}
+let aiCtl = null, aiText = "";
+async function explain(){
+  const {b} = brief(); const out = $("aiOut"), msg = $("aiMsg");
+  const sample = window.claude ? await claude.use("sample") : null;
+  if (!sample){ msg.textContent = "This feature isn't available in this view."; return; }
+  aiCtl?.abort(); aiCtl = new AbortController();
+  const facts = Object.entries({"Where things stand":b.cond,"Pushing stress up":b.up,"Keeping stress down":b.down,"What could happen next":b.scen,"What would change this view":b.inval,"Limits":b.lim})
+    .map(([k,v])=>`${k}:\n- ${v.join("\n- ")}`).join("\n\n");
+  const prompt = `You are explaining a gold-market stress index (AGSI, 0 to 100) to a business owner who is not a finance specialist.
+Rewrite the facts below as 3 short paragraphs in plain English, under 200 words in total. Rules:
+- Use ONLY the facts and numbers given. Do not mention gold prices, news, dates or figures that are not listed.
+- Do not predict prices or say whether to buy or sell. Say once that this is not investment advice.
+- If a fact says the data is sample data, make that clear at the start.
+- No headings, no bullet points, no markdown.
+
+FACTS
+${facts}`;
+  msg.textContent = "Thinking…"; aiText = ""; out.textContent = "";
+  try { const r = await sample(prompt, {signal:aiCtl.signal, modelTier:"quick", onText:u=>{ aiText = u.text; $("aiOut").textContent = aiText; }}); aiText = r.text; $("aiOut").textContent = aiText; msg.textContent = "Written by Claude from the brief above."; }
+  catch(e){ if (e && e.name==="AbortError") return; msg.textContent = e && e.code==="not_granted" ? "You declined, so nothing was sent." : e && e.code==="rate_limited" ? "Too many requests. Wait a minute and try again." : "That didn't work. Try again in a moment."; }
+}
+
+$("me").innerHTML = `
+  <div class="grid c4">
+    <div class="card"><div class="eyebrow">Calculated</div><p class="sm muted" style="margin:0">The AGSI score, its five parts, heat, regime, signal and bias. Pure arithmetic from your figures.</p></div>
+    <div class="card"><div class="eyebrow">Observed</div><p class="sm muted" style="margin:0">The five figures you enter and any reference price you type in. Only as good as their source.</p></div>
+    <div class="card"><div class="eyebrow">Judgement</div><p class="sm muted" style="margin:0">Your macro stress rating and notes. Personal by nature.</p></div>
+    <div class="card"><div class="eyebrow">Experimental <span class="tag exp">untested</span></div><p class="sm muted" style="margin:0">Component agreement, outlier flags and the plain-English explanation.</p></div>
+  </div>
+  <div class="card mt"><h2>How the score is worked out</h2>
+    <p class="sm" style="margin-top:0;max-width:75ch">Each figure is placed on a 0 to 100 stress scale between its low and high bound (anything past the bounds is capped at 0 or 100). The five results are then combined using fixed weights:</p>
+    <div class="well num sm tw">AGSI = 25% physical + 25% paper + 20% ETF + 20% delivery + 10% macro</div>
+    <div class="tw mt"><table><tr><th>Figure</th><th>Part</th><th class="r">Weight</th><th>Accepted</th><th>Scale bounds</th><th>Direction</th></tr>
+      ${INPUTS.map(s=>`<tr><td>${s.label}<div class="sm dim">${s.unit}</div></td><td>${s.comp}</td><td class="r num">${WEIGHTS[s.comp]*100}%</td><td class="num sm">${s.min} to ${s.max}</td><td class="num sm">${s.lo} to ${s.hi}</td><td class="sm">${s.up?"higher = more stress":"lower = more stress"}</td></tr>`).join("")}</table></div>
+    <p class="note">Figures outside the "accepted" range are refused. Figures inside it but past the scale bounds are accepted, capped, and flagged.</p>
+    <p class="note">ETF flow: positive means inflow and negative means outflow. Outflows count as stress because they signal selling or forced liquidation; a 50-tonne outflow scores 100 and a 50-tonne inflow scores 0. Readings saved before model agsi-1.1.0 used the opposite direction, and each saved reading keeps the model version that produced it.</p></div>
+  <div class="card mt"><h2>Bands</h2><div class="tw"><table><tr><th class="r">AGSI from</th><th>Heat</th><th>Regime</th><th>Status</th><th>Signal</th><th>Bias</th></tr>
+    ${BANDS.map(b=>`<tr><td class="r num">${b.min}</td><td><span class="pill t-${b.cls}">${b.heat}</span></td><td>${b.regime}</td><td>${b.status}</td><td>${b.signal}</td><td>${b.bias}</td></tr>`).join("")}</table></div>
+    <p class="note">Signal and bias are names for each band. They haven't been tested against what gold did afterwards, so they aren't trading advice.</p></div>
+  <div class="grid c2 mt">
+    <div class="card"><h2>Agreement score <span class="tag exp">experimental</span></h2><p class="sm" style="margin:0">100 minus twice the spread (standard deviation) of the five parts. High means the figures agree; low means they pull in different directions. It is not a probability or a confidence level.</p></div>
+    <div class="card"><h2>Jumps and streaks</h2><ul class="list sm"><li>Readings are put in date order; faulty or duplicate rows are skipped and counted.</li>
+      <li>A jump is a change between two readings of at least the size you choose (default 10 points).</li>
+      <li>An outlier is a jump that's also unusual for your history (z-score ${ANOMALY_Z}+, once there are ${ANOMALY_MIN}+ changes).</li>
+      <li>A streak is several moves in the same direction (default 3). It shows momentum, not the future.</li></ul></div>
+    <div class="card"><h2>Where the figures come from</h2><ul class="list sm"><li>Registered inventory: CME Group's daily COMEX gold depository report.</li><li>Open interest: CFTC Commitments of Traders (weekly, COMEX gold futures).</li><li>ETF flows: 7-day change in SPDR Gold Shares (GLD) holdings in tonnes (GLD only), or World Gold Council data entered by hand.</li><li>Delivery ratio: CME delivery notices.</li><li>Macro stress: your own assessment, or, when auto-filled from the AURUM data service, worked out from FRED: half from the St. Louis Fed Financial Stress Index (STLFSI4), half from how sharply the 10-year real yield (DFII10) moved over 20 trading days.</li><li>Auto-fill uses sample figures until a live data source is connected. Sample figures are marked "sample", and a reading saved with any sample figure is stored as sample data.</li><li>Figures loaded from a JSON feed are marked "from feed", and every saved reading records where its inputs came from.</li></ul></div>
+    <div class="card"><h2>Known limits</h2><ul class="list sm"><li>Weights and bounds are assumptions, not tested results.</li><li>There's no backtest linking AGSI to later gold prices.</li><li>Readings imported from the old log keep their original score, which may have used slightly different bounds.</li></ul></div>
+  </div>`;
+
+function renderSettings(){
+  const c = {}; state.rows.forEach(r=>c[r.source]=(c[r.source]||0)+1);
+  $("counts").innerHTML = (Object.keys(c).length?Object.entries(c):[["none",0]]).map(([k,n])=>`<dt>${{user:"Your readings",legacy_csv:"Old log",sample:"Sample (made-up)",none:"Total"}[k]||esc(k)}</dt><dd class="num">${n}</dd>`).join("");
+  const can = state.mode!=="live" || state.canWrite;
+  $("sampleBtns").innerHTML = !can ? "" : (c.sample ? `<button class="btn danger" id="btnDelSample">Remove ${c.sample} sample readings</button>` : `<button class="btn ghost" id="btnAddSample">Load 60 sample readings</button>`);
+  $("btnDelSample")?.addEventListener("click", delSamples); $("btnAddSample")?.addEventListener("click", addSamples);
+  $("csvFile").disabled = !can;
+  $("cfgList").innerHTML = `<dt>Model</dt><dd class="num">${MODEL}</dd><dt>Weights</dt><dd class="num">${Object.entries(WEIGHTS).map(([k,w])=>`${k} ${w*100}%`).join(", ")}</dd>
+    <dt>Jump size</dt><dd class="num">${TH} points</dd><dt>Streak length</dt><dd class="num">${RUN}</dd><dt>Storage</dt><dd>${state.mode==="live"?"Saved to your account":"This visit only"}</dd>`;
+}
+async function addSamples(){
+  const btn = $("btnAddSample"); btn.disabled = true;
+  let seed = 7; const rnd = () => (seed = (seed*16807) % 2147483647) / 2147483647;
+  const g = (m,s) => { const u = rnd()||1e-9, v = rnd(); return m + s*Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); };
+  let inv=18, oi=450, etf=0, dr=6, mac=30; const start = Date.now() - 60*864e5;
+  for (let d=0; d<60; d++){
+    inv=Math.min(30,Math.max(3,inv+g(-.12,.6))); oi=Math.min(900,Math.max(200,oi+g(2,18))); etf=Math.max(-80,Math.min(80,etf*.6+g(1,12)));
+    dr=Math.min(30,Math.max(.5,dr+g(.08,.9))); mac=Math.min(100,Math.max(0,mac+g(.3,4)));
+    const r = calculate({registered_inventory:inv.toFixed(2), open_interest:oi.toFixed(1), etf_flow:etf.toFixed(1), delivery_ratio:dr.toFixed(2), macro_stress:mac.toFixed(1)});
+    $("sampleMsg").textContent = `Adding sample readings… ${d+1} of 60`;
+    try { await saveReading(r, "Sample data (made up)", "sample", new Date(start + d*864e5).toISOString()); } catch { $("sampleMsg").textContent = "Stopped: couldn't save sample readings."; return; }
+  }
+  $("sampleMsg").textContent = "Added 60 sample readings.";
+}
+async function delSamples(){
+  const ids = state.rows.filter(r=>r.source==="sample").map(r=>r.id); let i = 0;
+  $("btnDelSample").disabled = true;
+  for (const id of ids){ try { await deleteReading(id); i++; $("sampleMsg").textContent = `Removing… ${i} of ${ids.length}`; } catch { $("sampleMsg").textContent = "Stopped: couldn't remove all sample readings."; return; } }
+  $("sampleMsg").textContent = `Removed ${i} sample readings.`;
+}
+$("csvFile").addEventListener("change", async e=>{
+  const file = e.target.files[0]; if (!file) return; const msg = $("importMsg");
+  if (file.size > 2*1024*1024){ msg.textContent = "That file is over 2 MB. Split it and try again."; return; }
+  const text = await file.text(); const lines = text.replace(/^﻿/,"").split(/\r?\n/).filter(l=>l.trim());
+  const split = l => { const out=[]; let cur="", q=false; for (const ch of l){ if (ch==='"') q=!q; else if (ch===","&&!q){ out.push(cur); cur=""; } else cur+=ch; } out.push(cur); return out.map(s=>s.trim()); };
+  const head = split(lines[0]||"").map(h=>h.toLowerCase());
+  const find = names => head.findIndex(h=>names.includes(h));
+  const iT = find(["timestamp","date","datetime","time","date_time"]), iS = find(["agsi","score","agsi_score","index"]);
+  if (iT<0 || iS<0){ msg.textContent = `Couldn't find a date column and an AGSI/score column. Columns found: ${head.join(", ") || "none"}.`; return; }
+  const iIn = Object.fromEntries(INPUTS.map(s=>[s.key, find({registered_inventory:["registered_inventory","inventory","registered"],open_interest:["open_interest","oi"],etf_flow:["etf_flow","etf","etf_flows"],delivery_ratio:["delivery_ratio","delivery"],macro_stress:["macro_stress","macro"]}[s.key])]));
+  const have = new Set(state.rows.map(r=>r.id)); let ok=0, dup=0, bad=0;
+  for (let n=1; n<lines.length; n++){
+    const c = split(lines[n]); let raw = c[iT]; if (/^\d{1,2}\/\d{1,2}\/\d{4}/.test(raw)){ const [dd,mm,yy] = raw.split(/[\/ ]/); raw = `${yy}-${mm.padStart(2,"0")}-${dd.padStart(2,"0")}${raw.split(" ")[1]?"T"+raw.split(" ")[1]:""}`; }
+    const t = Date.parse(raw.includes("T")||raw.length<=10 ? raw : raw.replace(" ","T")), s = Number(c[iS]);
+    if (!Number.isFinite(t) || !Number.isFinite(s) || s<0 || s>100){ bad++; continue; }
+    const ts = new Date(t).toISOString(), id = docId("L", ts, String(s).replace(".","p"));
+    if (have.has(id)){ dup++; continue; }
+    const inputs = {}; INPUTS.forEach(x=>{ const v = iIn[x.key]>=0 ? Number(c[iIn[x.key]]) : NaN; inputs[x.key] = Number.isFinite(v) ? v : null; });
+    const b = classify(s);
+    msg.textContent = `Importing… ${ok+1}`;
+    try { await saveReading({score:s, inputs, comp:null, status:b.status, signal:b.signal, bias:b.bias, regime:b.regime, heat:b.heat, agreement:null, model:"legacy-prototype"}, "Imported from old log", "legacy_csv", ts); ok++; have.add(id); }
+    catch { msg.textContent = `Stopped after ${ok} rows: couldn't save.`; return; }
+  }
+  msg.textContent = `Imported ${ok} reading${ok===1?"":"s"}. ${dup} already there, ${bad} row${bad===1?"":"s"} skipped because the date or score wasn't readable.`;
+  e.target.value = "";
+});
+
+function renderMethodModal(){
+  $("methodBody").innerHTML = `
+    <h3>Engine version</h3><p>This page runs model <b class="num">${MODEL}</b>. Version 1.1.0 changed one rule: ETF outflows now raise stress, where 1.0.0 treated inflows as stress.</p>
+    <h3>Five components and their weights</h3>
+    <div class="tw"><table><tr><th>Component</th><th class="r">Weight</th><th>Stress rises when</th></tr>
+      ${INPUTS.map(s=>`<tr><td>${s.label}</td><td class="r num">${WEIGHTS[s.comp]*100}%</td><td class="sm">${s.up?"it rises":"it falls"}</td></tr>`).join("")}
+      <tr><td><b>Total</b></td><td class="r num"><b>${Math.round(Object.values(WEIGHTS).reduce((a,b)=>a+b,0)*100)}%</b></td><td></td></tr></table></div>
+    <h3>0–100 normalisation, before weighting</h3>
+    <p>Each figure is first placed on a 0–100 stress scale using fixed low and high bounds (min-max scaling): stress = (value − low) ÷ (high − low) × 100, flipped where a lower value means more stress. Anything past a bound is capped at 0 or 100, so no single figure can push the score outside 0–100. Only then are the five scaled values multiplied by their weights and added up.</p>
+    <div class="tw"><table><tr><th>Component</th><th>Low bound</th><th>High bound</th><th>Scores 100 at</th></tr>
+      ${INPUTS.map(s=>`<tr><td>${s.label}</td><td class="num">${s.lo}</td><td class="num">${s.hi}</td><td class="num">${s.up?s.hi:s.lo}</td></tr>`).join("")}</table></div>
+    <h3>Four regime bands</h3>
+    <div class="tw"><table><tr><th>AGSI</th><th>Heat</th><th>Regime</th></tr>
+      ${BANDS.map((b,i)=>`<tr><td class="num">${i===0?"below 30":i===3?"80 and above":`${b.min} to ${(BANDS[i+1].min-0.01).toFixed(2)}`}</td><td><span class="pill t-${b.cls}">${b.heat}</span></td><td>${b.regime}</td></tr>`).join("")}</table></div>
+    <p class="sm muted">Checked in order: under 30, under 60, under 80, otherwise 80+. Scores are rounded to two decimals before the check, so 29.99 is Calm and 30.00 is Watch.</p>
+    <h3>Saved readings keep their version</h3>
+    <p>Every saved reading stores the model version that produced it. When the model changes, older readings are not recalculated or relabelled, so you can always tell which rules a past score was made with and the history doesn't drift silently.</p>
+    <p class="note">The weights and bounds are starting assumptions and have not been tested against later gold prices. See the Methodology page for full detail.</p>`;
+}
+const dlg = $("methodDlg");
+document.addEventListener("click", e=>{ if (e.target.closest("[data-open-method]")){ renderMethodModal(); if (dlg.showModal) dlg.showModal(); else dlg.setAttribute("open",""); $("methodClose").focus(); } });
+$("methodClose").addEventListener("click", ()=>dlg.close ? dlg.close() : dlg.removeAttribute("open"));
+dlg.addEventListener("click", e=>{ if (e.target === dlg) dlg.close(); });
+document.querySelectorAll("[data-model]").forEach(el=>el.textContent = MODEL);
+
+function renderAll(){
+  renderStatus(); renderOverview(); renderEngine(); renderManual(); renderStress(); renderRegimes(); renderHistory(); renderResearch(); renderSettings();
+  route();
+}
+renderAfStatus();
+boot();
+</script>
+
+</body>
+</html>
