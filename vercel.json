@@ -1,14 +1,14 @@
 {
-  "builds": [
-    {
-      "src": "agsi-latest.py",
-      "use": "@vercel/python"
-    }
+  "functions": {
+    "api/agsi_latest.py": { "maxDuration": 30 }
+  },
+  "rewrites": [
+    { "source": "/api/agsi-latest", "destination": "/api/agsi_latest" }
   ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "agsi-latest.py"
-    }
+  "headers": [
+    { "source": "/(.*)", "headers": [
+      { "key": "X-Content-Type-Options", "value": "nosniff" },
+      { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+    ] }
   ]
 }

@@ -8,8 +8,10 @@ from urllib.request import Request, urlopen
 
 import pytest
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from agsi_service import core, service, sources  # noqa: E402
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(ROOT, "api"))
+import agsi_latest as m  # noqa: E402
+core = service = sources = m   # everything lives in the one self-contained file
 
 GLD_CSV = """SPDR GOLD SHARES
 Date,GLD Close,LBMA Gold Price,NAV per GLD in Gold,NAV/share at 10.30 a.m. NYT,Indicative Price of GLD at 4.15 p.m. NYT,Mid point of bid/ask spread at 4.15 p.m. NYT#,Premium/Discount of GLD mid point v Indicative Value of GLD at 4.15 p.m. NYT,Daily Share Volume,Total Net Asset Value Ounces in the Trust as at 4.15 p.m. NYT,Total Net Asset Value Tonnes in the Trust as at 4.15 p.m. NYT,Total Net Asset Value in the Trust
@@ -90,11 +92,18 @@ def test_macro_without_key(monkeypatch):
 
 def test_fetch_failure_is_reported_not_raised(monkeypatch):
     def boom(*a, **k):
-        raise sources.requests.ConnectionError("down")
-    monkeypatch.setattr(sources.requests, "get", boom)
-    for fn in (sources.open_interest, sources.etf_flow, sources.registered_inventory):
+        raise m.URLError("down")
+    monkeypatch.setattr(m, "urlopen", boom)
+    for fn in (m.open_interest, m.etf_flow, m.registered_inventory):
         r = fn()
-        assert r["status"] == "unavailable" and r["value"] is None and "could not be reached" in r["reason"]
+        assert r["status"] == "unavailable" and r["value"] is None
+
+
+def test_http_error_code_is_reported(monkeypatch):
+    def denied(*a, **k):
+        raise m.HTTPError("u", 403, "Forbidden", {}, None)
+    monkeypatch.setattr(m, "urlopen", denied)
+    assert "HTTP 403" in m.open_interest()["reason"]
 
 
 # ------------------------------------------------------------ endpoint body
@@ -134,23 +143,81 @@ def test_crashing_fetcher_does_not_break_response():
 
 def test_cors_headers(monkeypatch):
     monkeypatch.setenv("AGSI_ALLOWED_ORIGINS", "https://a.example,https://b.example")
-    assert service.headers("https://b.example")["Access-Control-Allow-Origin"] == "https://b.example"
-    assert service.headers("https://evil.example")["Access-Control-Allow-Origin"] == "https://a.example"
+    assert m.cors_headers("https://b.example")["Access-Control-Allow-Origin"] == "https://b.example"
+    assert m.cors_headers("https://evil.example")["Access-Control-Allow-Origin"] == "https://a.example"
     monkeypatch.setenv("AGSI_ALLOWED_ORIGINS", "*")
-    assert service.headers(None)["Access-Control-Allow-Origin"] == "*"
+    assert m.cors_headers(None)["Access-Control-Allow-Origin"] == "*"
 
 
-def test_vercel_handler_serves_json(monkeypatch):
-    import importlib.util
-    spec = importlib.util.spec_from_file_location("agsi_latest", os.path.join(os.path.dirname(__file__), "..", "api", "agsi-latest.py"))
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    monkeypatch.setattr(service.sources, "FETCHERS", FULL)
-    service._cache.update(at=0, body=None)
-    srv = HTTPServer(("127.0.0.1", 0), mod.handler)
+def _serve_once(monkeypatch=None):
+    srv = HTTPServer(("127.0.0.1", 0), m.handler)
     threading.Thread(target=srv.handle_request, daemon=True).start()
-    with urlopen(Request(f"http://127.0.0.1:{srv.server_port}/api/agsi-latest")) as r:
-        body = json.loads(r.read())
-        assert r.status == 200 and "s-maxage" in r.headers["Cache-Control"]
-    assert body["agsi"]["score"] == 71.23
+    with urlopen(Request(f"http://127.0.0.1:{srv.server_port}/api/agsi_latest")) as r:
+        status, cc, body = r.status, r.headers["Cache-Control"], json.loads(r.read())
     srv.server_close()
+    return status, cc, body
+
+
+def test_handler_serves_json(monkeypatch):
+    monkeypatch.setattr(m, "FETCHERS", FULL)
+    m._cache.update(at=0, body=None)
+    status, cc, body = _serve_once()
+    assert status == 200 and "s-maxage" in cc and body["agsi"]["score"] == 71.23 and body["fallback"] is False
+
+
+def test_unavailable_inputs_carry_labelled_sample_only():
+    b = m.build_latest({**FULL, "delivery_ratio": m.delivery_ratio})
+    e = b["inputs"]["delivery_ratio"]
+    assert e["value"] is None and e["status"] == "unavailable"
+    lo, hi, _ = m.SAMPLE_RANGES["delivery_ratio"]
+    assert lo <= e["sample_value"] <= hi
+    assert "sample_value" not in b["inputs"]["open_interest"]      # real values never get a sample
+
+
+def test_raising_fetcher_does_not_break_reply():
+    def explode():
+        raise RuntimeError("boom")
+    b = m.build_latest({**FULL, "open_interest": explode})
+    assert b["inputs"]["open_interest"]["status"] == "unavailable" and b["inputs"]["etf_flow"]["status"] == "ok"
+
+
+def test_total_failure_returns_200_fallback(monkeypatch):
+    def broken(*a, **k):
+        raise RuntimeError("everything is down")
+    monkeypatch.setattr(m, "build_latest", broken)
+    m._cache.update(at=0, body=None)
+    status, _, body = _serve_once()
+    assert status == 200 and body["fallback"] is True and body["agsi"] is None
+    assert all(v["value"] is None and v["sample_value"] is not None for v in body["inputs"].values())
+    assert m._cache["body"] is None            # a failure is never cached
+
+
+VERCEL_STYLE_LOADER = r"""
+import importlib.util, json, os, sys, threading
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from urllib.request import urlopen
+# Mirrors how Vercel's Python runtime loads a function: by file path, from the project root.
+spec = importlib.util.spec_from_file_location("__VC_HANDLER_MODULE_NAME", "./api/agsi_latest.py")
+mod = importlib.util.module_from_spec(spec); sys.modules[spec.name] = mod; spec.loader.exec_module(mod)
+assert issubclass(mod.handler, BaseHTTPRequestHandler)
+missing = [p for p in ("requests", "xlrd") if importlib.util.find_spec(p)]
+ok = lambda v: (lambda: {"value": v, "as_of": "2026-10-20", "source": "t", "status": "ok"})
+mod.FETCHERS = {"registered_inventory": mod.registered_inventory, "open_interest": ok(620), "etf_flow": ok(-12),
+                "delivery_ratio": mod.delivery_ratio, "macro_stress": mod.macro_stress}
+srv = HTTPServer(("127.0.0.1", 0), mod.handler); threading.Thread(target=srv.handle_request, daemon=True).start()
+body = json.loads(urlopen(f"http://127.0.0.1:{srv.server_port}/").read())
+print(json.dumps({"third_party_found": missing, "inv_reason": body["inputs"]["registered_inventory"].get("reason"),
+                  "macro_reason": body["inputs"]["macro_stress"].get("reason"), "oi": body["inputs"]["open_interest"]["value"]}))
+"""
+
+
+def test_loads_like_vercel_in_bare_python():
+    """No site-packages at all (-S): proves the function imports and answers with nothing installed."""
+    import subprocess
+    env = {k: v for k, v in os.environ.items() if k not in ("FRED_API_KEY", "PYTHONPATH")}
+    out = subprocess.run([sys.executable, "-I", "-S", "-c", VERCEL_STYLE_LOADER], cwd=ROOT, env=env,
+                         capture_output=True, text=True, timeout=60)
+    assert out.returncode == 0, out.stderr
+    r = json.loads(out.stdout.strip().splitlines()[-1])
+    assert r["third_party_found"] == [] and r["oi"] == 620
+    assert "xlrd" in r["inv_reason"] and "FRED_API_KEY" in r["macro_reason"]

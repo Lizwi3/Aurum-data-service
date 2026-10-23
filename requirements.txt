@@ -1,2 +1,5 @@
-requests>=2.31
-xlrd>=2.0.1
+# api/agsi_latest.py uses only Python's standard library (json, urllib, csv, ...),
+# so requests/urllib3 are no longer needed.
+# Optional: reads the CME Gold_Stocks.xls report. Without it, only the registered
+# inventory figure is reported as unavailable; everything else still works.
+xlrd==2.0.1

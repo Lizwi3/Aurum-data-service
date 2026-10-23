@@ -4,7 +4,8 @@ import os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(HERE, "..", "standalone", "aurum.html")
-META = '<meta name="aurum-api" content="/api/agsi-latest">'
+# The page calls the function file directly (/api/agsi_latest); /api/agsi-latest also works via vercel.json.
+META = '<meta name="aurum-api" content="/api/agsi_latest">'
 
 
 def build(src_text):

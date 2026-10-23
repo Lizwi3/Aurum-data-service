@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="aurum-api" content="/api/agsi-latest">
+<meta name="aurum-api" content="/api/agsi_latest">
 <title>AURUM Intelligence</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -673,7 +673,7 @@ const DataService = {
    is connected) is filled from sampleAgsiData() and labelled "sample".
 
    Which service is used:
-     <meta name="aurum-api" content="/api/agsi-latest">  in the page,
+     <meta name="aurum-api" content="/api/agsi_latest">  in the page,
      which the hosted copy (serverless/index.html) already has, or set
      AGSI_API_URL_OVERRIDE below to a full https:// address.
    Pages hosted inside Claude can't call outside servers, so this copy
@@ -719,12 +719,19 @@ async function fetchLatestAgsiData(){
       const j = await getAgsiService(AGSI_API_URL);
       service = {model: j.model || null, generatedAt: j.generated_at || null, complete: !!j.complete};
       if (j.model && j.model !== MODEL) problems.push(`The data service runs model ${j.model}, this page runs ${MODEL}`);
+      if (j.fallback) problems.push("The data service couldn't reach its sources, so every figure is a sample");
       for (const s of INPUTS){
         const e = j.inputs && j.inputs[s.key];
         const v = e && e.value !== null && e.value !== undefined ? Number(e.value) : NaN;
         if (e && e.status === "ok" && Number.isFinite(v) && v >= s.min && v <= s.max){
           values[s.key] = v; meta[s.key] = {kind:"live", source:e.source || "AURUM data service", asOf:e.as_of || null};
-        } else if (e){ problems.push(`${s.label}: ${e.reason || "not available"}`); }
+        } else if (e){
+          if (!j.fallback) problems.push(`${s.label}: ${e.reason || "not available"}`);
+          const sv = Number(e.sample_value);   // the service's labelled sample, used only as a sample
+          if (e.sample_value !== null && e.sample_value !== undefined && Number.isFinite(sv) && sv >= s.min && sv <= s.max){
+            values[s.key] = sv; meta[s.key] = {kind:"sample", source:"AURUM data service (sample)", asOf:null};
+          }
+        }
       }
     } catch(e){ problems.push(`Live data unavailable: ${e.message}`); }
   }
