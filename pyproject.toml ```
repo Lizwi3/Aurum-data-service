@@ -1,0 +1,3 @@
+[tool.vercel]
+entrypoint = "api.agsi_latest:handler"
+```[cite: 22]
