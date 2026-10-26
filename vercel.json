@@ -1,12 +1,12 @@
 {
-  "rewrites": [
+  "routes": [
     {
-      "source": "/api/agsi_latest",
-      "destination": "/api/agsi_latest.py"
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
     },
     {
-      "source": "/api",
-      "destination": "/api/agsi_latest.py"
+      "src": "/(.*)",
+      "dest": "/$1"
     }
   ]
 }
