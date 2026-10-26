@@ -1,16 +1,12 @@
 {
   "rewrites": [
     {
-      "source": "/",
-      "destination": "/index.html"
+      "source": "/api/agsi_latest",
+      "destination": "/api/agsi_latest.py"
     },
     {
       "source": "/api",
-      "destination": "/api/index.py"
-    },
-    {
-      "source": "/api/(.*)",
-      "destination": "/api/index.py"
+      "destination": "/api/agsi_latest.py"
     }
   ]
 }
