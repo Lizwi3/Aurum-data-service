@@ -33,7 +33,11 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 log = logging.getLogger("agsi")
-
+BROWSER_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Referer": "https://www.cmegroup.com/",
+}
 # =============================================================== model agsi-1.1.0
 # Same maths as the AURUM app (aurum/engine.py) and page; the app's tests check they agree.
 MODEL_VERSION = "agsi-1.1.0"
@@ -112,8 +116,7 @@ def sample_value(key):
 
 # =============================================================== HTTP helper (stdlib only)
 TIMEOUT = float(os.getenv("AGSI_HTTP_TIMEOUT", "8") or 8)
-UA = "AURUM-Intelligence/1.1 (research data service)"
-
+UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
 
 class FetchError(Exception):
     pass
@@ -122,7 +125,7 @@ class FetchError(Exception):
 def http_get(url, params=None, headers=None):
     if params:
         url = url + ("&" if "?" in url else "?") + urlencode(params)
-    req = Request(url, headers={"User-Agent": UA, "Accept": "*/*", **(headers or {})})
+req = Request(url, headers={"User-Agent": UA, "Accept": "*/*", **(headers or {})})
     try:
         with urlopen(req, timeout=TIMEOUT) as r:
             return r.read(8 * 1024 * 1024)
