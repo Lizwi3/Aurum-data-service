@@ -1,8 +1,0 @@
-{
-  "rewrites": [
-    {
-      "source": "/api/agsi-latest",
-      "destination": "/api/agsi_latest"
-    }
-  ]
-}
