@@ -447,3 +447,5 @@ class handler(BaseHTTPRequestHandler):
 
     def log_message(self, fmt, *args):   # keep Vercel logs to warnings/errors
         pass
+
+app = handler
